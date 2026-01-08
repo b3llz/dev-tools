@@ -3,130 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HPP Admin Panel</title>
+    <title>HPP Admin Panel Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>body{font-family:'Plus Jakarta Sans',sans-serif;background-color:#f8fafc}.loader{border:2px solid #e2e8f0;border-top:2px solid #4f46e5;border-radius:50%;width:14px;height:14px;animation:spin 1s linear infinite;display:inline-block}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}</style>
+    <style>
+        body{font-family:'Plus Jakarta Sans',sans-serif;background-color:#f8fafc}
+        .loader{border:2px solid #e2e8f0;border-top:2px solid #4f46e5;border-radius:50%;width:14px;height:14px;animation:spin 1s linear infinite;display:inline-block}
+        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+        /* Smooth Fade In */
+        .animate-fade { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body class="pb-24 text-slate-800 bg-slate-50">
 
-    <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-900/50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl">
-            <h2 class="font-bold text-lg mb-4 text-slate-800">Konfigurasi Admin</h2>
-            <div class="space-y-3">
+    <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-fade">
+            <h2 class="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-indigo-600"></i> Konfigurasi Admin
+            </h2>
+            <div class="space-y-4">
                 <div>
-                    <label class="text-[10px] font-bold uppercase text-slate-400">Secret Key (App Password)</label>
-                    <div class="relative">
-                        <input id="inKey" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500" placeholder="Samakan dengan App.jsx">
+                    <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Secret Key (App Password)</label>
+                    <div class="relative mt-1">
+                        <input id="inKey" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition" placeholder="Wajib sama dengan App.jsx">
                         <i class="fa-solid fa-key absolute right-3 top-3.5 text-slate-400 text-xs"></i>
                     </div>
                 </div>
-                <hr class="border-slate-100 my-2">
-                <div>
-                    <label class="text-[10px] font-bold uppercase text-slate-400">GitHub Token (PAT)</label>
-                    <input id="inToken" type="password" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-mono outline-none focus:border-indigo-500" placeholder="ghp_xxxxxxxxxxxx">
+                
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">GitHub Token (PAT)</label>
+                        <input id="inToken" type="password" class="w-full bg-white border border-slate-200 p-2.5 rounded-lg text-sm font-mono outline-none focus:border-indigo-500 mt-1" placeholder="ghp_xxxxxxxxxxxx">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">ID Gist / Link Gist</label>
+                        <input id="inGist" type="text" class="w-full bg-white border border-slate-200 p-2.5 rounded-lg text-sm font-mono outline-none focus:border-indigo-500 mt-1" placeholder="Paste link Gist disini...">
+                    </div>
                 </div>
-                <div>
-                    <label class="text-[10px] font-bold uppercase text-slate-400">Link Gist (Database)</label>
-                    <input id="inGist" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-mono outline-none focus:border-indigo-500" placeholder="https://gist.github.com/...">
-                    <p class="text-[9px] text-slate-400 mt-1">*Paste link lengkap Gist atau ID-nya saja.</p>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="toggleSettings()" class="flex-1 bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 py-3 rounded-xl font-bold text-xs transition">Batal</button>
+                    <button type="button" onclick="saveConfig()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-indigo-500/30 transition">Simpan</button>
                 </div>
-                <button type="button" onclick="saveConfig()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm mt-2 shadow-lg">Simpan Konfigurasi</button>
-                <button type="button" onclick="toggleSettings()" class="w-full text-slate-400 py-2 text-xs font-bold">Tutup</button>
             </div>
         </div>
     </div>
 
     <nav class="fixed top-0 w-full bg-white/80 backdrop-blur-md z-40 border-b border-slate-200 px-4 py-3 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md"><i class="fa-solid fa-shield-halved"></i></div>
-            <h1 class="font-bold text-slate-800">Admin Panel</h1>
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-gradient-to-br from-indigo-600 to-indigo-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-slate-800 leading-none">Admin Panel</h1>
+                <p class="text-[10px] font-bold text-slate-400">License Manager</p>
+            </div>
         </div>
-        <button type="button" onclick="toggleSettings()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-indigo-600 transition flex items-center justify-center"><i class="fa-solid fa-gear"></i></button>
+        <button type="button" onclick="toggleSettings()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition flex items-center justify-center border border-transparent hover:border-indigo-100">
+            <i class="fa-solid fa-gear"></i>
+        </button>
     </nav>
 
-    <div class="max-w-md mx-auto pt-24 px-4 space-y-6">
-        <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
-            <h2 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fa-solid fa-plus-circle text-indigo-500"></i> Deploy License</h2>
-            <div class="space-y-3">
-                <input id="tenantName" type="text" placeholder="Nama Client..." class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-indigo-500 transition">
-                <div class="flex gap-3">
-                    <input id="durationVal" type="number" value="1" class="w-20 text-center bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-500">
-                    <select id="durationUnit" class="flex-1 bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-500 appearance-none">
-                        <option value="month">Bulan</option>
-                        <option value="year">Tahun</option>
-                        <option value="day">Hari</option>
-                    </select>
+    <div class="max-w-md mx-auto pt-24 px-4 space-y-6 animate-fade">
+        
+        <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-2xl -mr-8 -mt-8 transition group-hover:bg-indigo-100"></div>
+            
+            <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2 relative z-10">
+                <i class="fa-solid fa-plus-circle text-indigo-500"></i> Buat Lisensi Baru
+            </h2>
+            
+            <div class="space-y-4 relative z-10">
+                <div>
+                    <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Nama Client / Toko</label>
+                    <input id="tenantName" type="text" placeholder="Contoh: Kopi Senja" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition mt-1">
                 </div>
-                <button type="button" onclick="generate()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2"><i class="fa-solid fa-bolt"></i> GENERATE KEY</button>
+                
+                <div>
+                    <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Masa Aktif</label>
+                    <div class="flex gap-3 mt-1">
+                        <input id="durationVal" type="number" value="1" class="w-20 text-center bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition">
+                        <select id="durationUnit" class="flex-1 bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-500 cursor-pointer appearance-none focus:ring-2 focus:ring-indigo-200 transition">
+                            <option value="month">Bulan</option>
+                            <option value="year">Tahun</option>
+                            <option value="day">Hari</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="button" onclick="generate()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-[0.98] transition flex items-center justify-center gap-2 mt-2">
+                    <i class="fa-solid fa-bolt text-yellow-400"></i> GENERATE KEY
+                </button>
             </div>
         </div>
 
         <div>
             <div class="flex justify-between items-center px-1 mb-3">
-                <h3 class="font-bold text-slate-400 text-xs uppercase tracking-wider">Client List</h3>
-                <button type="button" onclick="loadClients()" class="text-indigo-500 text-xs font-bold">Refresh</button>
+                <h3 class="font-bold text-slate-400 text-xs uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-users"></i> Daftar Client
+                </h3>
+                <button type="button" onclick="loadClients()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold bg-indigo-50 px-3 py-1 rounded-full transition">
+                    Refresh Data
+                </button>
             </div>
-            <div id="clientList" class="space-y-3"></div>
+            <div id="clientList" class="space-y-3 pb-10"></div>
         </div>
     </div>
 
     <script>
-        // INIT
+        // ============================================================
+        // LOGIC START
+        // ============================================================
+        
         document.addEventListener('DOMContentLoaded', () => {
             loadClients();
-            // Cek apakah config ada, jika tidak ada baru buka modal
+            // Cek kelengkapan config
             if(!localStorage.getItem('gh_token') || !localStorage.getItem('app_secret')) {
-                toggleSettings();
+                // Beri jeda sedikit agar animasi smooth
+                setTimeout(() => toggleSettings(), 500);
             }
         });
 
+        // --- MANAGEMEN UI ---
         function toggleSettings() {
             const modal = document.getElementById('settingsModal');
             modal.classList.toggle('hidden');
             
-            // Jika modal dibuka, isi form dengan data yang tersimpan (jika ada)
             if(!modal.classList.contains('hidden')) {
+                // Load data saat modal dibuka
                 document.getElementById('inKey').value = localStorage.getItem('app_secret') || '';
                 document.getElementById('inToken').value = localStorage.getItem('gh_token') || '';
                 document.getElementById('inGist').value = localStorage.getItem('gh_gist') || '';
             }
         }
 
+        // --- SIMPAN KONFIGURASI (AMAN) ---
         function saveConfig() {
             const key = document.getElementById('inKey').value.trim();
             const token = document.getElementById('inToken').value.trim();
             let gistInput = document.getElementById('inGist').value.trim();
 
-            if(!key || !token || !gistInput) return alert("Semua kolom wajib diisi!");
+            if(!key || !token || !gistInput) return alert("Harap isi semua kolom konfigurasi!");
 
-            // Bersihkan URL Gist untuk ambil ID-nya saja
-            if(gistInput.endsWith('/')) gistInput = gistInput.slice(0, -1);
-            const gistId = gistInput.split('/').pop();
+            // Ambil ID Gist saja jika user paste URL lengkap
+            if(gistInput.includes('/')) {
+                if(gistInput.endsWith('/')) gistInput = gistInput.slice(0, -1);
+                gistInput = gistInput.split('/').pop();
+            }
 
-            // Simpan ke Key Khusus (Bukan 'clients')
+            // Simpan ke LocalStorage dengan key khusus (Terpisah dari data client)
             localStorage.setItem('app_secret', key);
             localStorage.setItem('gh_token', token);
-            localStorage.setItem('gh_gist', gistId);
+            localStorage.setItem('gh_gist', gistInput);
             
             toggleSettings();
-            alert("Konfigurasi Tersimpan!");
+            
+            // Tampilkan notifikasi kecil
+            const btn = document.querySelector('button[onclick="loadClients()"]');
+            const oriText = btn.innerText;
+            btn.innerText = "Tersimpan!";
+            setTimeout(() => btn.innerText = oriText, 2000);
+            
             loadClients();
         }
 
+        // --- GENERATE LISENSI ---
         function generate() {
             const secretKey = localStorage.getItem('app_secret');
-            if(!secretKey) return alert("Setting dulu Secret Key-nya!");
+            if(!secretKey) return alert("Secret Key belum disetting! Buka menu gear di pojok kanan atas.");
 
             const name = document.getElementById('tenantName').value;
             const val = parseInt(document.getElementById('durationVal').value);
             const unit = document.getElementById('durationUnit').value;
 
-            if(!name) return alert("Isi nama dulu!");
+            if(!name) return alert("Nama Client tidak boleh kosong!");
 
-            const id = `ID-${name.replace(/\s+/g, '').substring(0,3).toUpperCase()}-${Math.floor(1000+Math.random()*9000)}`;
+            // Buat ID Unik
+            const id = `ID-${name.replace(/[^a-zA-Z0-9]/g, '').substring(0,4).toUpperCase()}-${Math.floor(1000+Math.random()*9000)}`;
+            
+            // Hitung Tanggal Expired
             const date = new Date();
             if(unit === 'month') date.setMonth(date.getMonth() + val);
             if(unit === 'year') date.setFullYear(date.getFullYear() + val);
@@ -135,142 +193,184 @@
             const data = { id, tenant: name, validUntil: date.toISOString() };
             
             try {
+                // Enkripsi Data
                 const token = CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
-                const newClient = { ...data, token, status: 'active' };
+                const newClient = { ...data, token, status: 'active', createdAt: new Date().toISOString() };
                 
+                // Simpan ke Database Lokal
                 let db = JSON.parse(localStorage.getItem('clients') || '[]');
                 db.unshift(newClient);
                 localStorage.setItem('clients', JSON.stringify(db));
                 
                 loadClients();
-                document.getElementById('tenantName').value = '';
-            } catch (e) { alert("Gagal enkripsi: " + e.message); }
+                document.getElementById('tenantName').value = ''; // Reset Form
+                alert("Lisensi Berhasil Dibuat!");
+            } catch (e) { 
+                alert("Gagal membuat lisensi. Pastikan Secret Key benar.\nError: " + e.message); 
+            }
         }
 
+        // --- LOAD DATA CLIENT ---
         function loadClients() {
             const db = JSON.parse(localStorage.getItem('clients') || '[]');
             const container = document.getElementById('clientList');
             container.innerHTML = '';
 
             if(db.length === 0) {
-                container.innerHTML = '<p class="text-center text-slate-400 text-xs py-10 opacity-50">Belum ada client.</p>';
+                container.innerHTML = `
+                <div class="text-center py-10 opacity-50">
+                    <i class="fa-regular fa-folder-open text-4xl text-slate-300 mb-2"></i>
+                    <p class="text-xs text-slate-400">Belum ada client terdaftar.</p>
+                </div>`;
                 return;
             }
 
             db.forEach(c => {
                 const isBanned = c.status === 'banned';
                 
+                // Tombol Action (Ban/Unban)
                 const actionBtn = isBanned 
-                    ? `<button onclick="toggleBan('${c.id}', 'unban', this)" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-lg text-[10px] font-bold shadow-md shadow-emerald-500/20"><i class="fa-solid fa-lock-open mr-1"></i> BUKA</button>`
-                    : `<button onclick="toggleBan('${c.id}', 'ban', this)" class="flex-1 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 py-2.5 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-power-off mr-1"></i> SHUTDOWN</button>`;
+                    ? `<button onclick="toggleBan('${c.id}', 'unban', this)" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-lg text-[10px] font-bold shadow-md shadow-emerald-500/20 transition flex items-center justify-center gap-1"><i class="fa-solid fa-lock-open"></i> BUKA AKSES</button>`
+                    : `<button onclick="toggleBan('${c.id}', 'ban', this)" class="flex-1 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 hover:border-rose-300 py-2.5 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1"><i class="fa-solid fa-power-off"></i> SHUTDOWN</button>`;
                 
-                const badge = isBanned ? '<span class="text-rose-500 bg-rose-50 px-2 py-0.5 rounded text-[9px] font-bold border border-rose-100">TERKUNCI</span>' : '<span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[9px] font-bold border border-emerald-100">AKTIF</span>';
-                const bg = isBanned ? 'bg-slate-50 border-rose-200' : 'bg-white border-slate-100';
+                const badge = isBanned 
+                    ? '<span class="text-rose-600 bg-rose-50 px-2 py-0.5 rounded text-[9px] font-black border border-rose-100 uppercase tracking-wide"><i class="fa-solid fa-ban mr-1"></i>DIBLOKIR</span>' 
+                    : '<span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[9px] font-black border border-emerald-100 uppercase tracking-wide"><i class="fa-solid fa-check mr-1"></i>AKTIF</span>';
+                
+                const bgClass = isBanned ? 'bg-slate-50 border-rose-200 ring-1 ring-rose-100' : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-md';
 
                 const html = `
-                <div class="p-4 rounded-2xl shadow-sm border ${bg} transition-all">
-                    <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-slate-800 text-sm">${c.tenant}</h4>
+                <div class="p-4 rounded-2xl shadow-sm border ${bgClass} transition-all duration-300 group">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-store text-slate-400"></i> ${c.tenant}
+                            </h4>
+                            <p class="text-[10px] text-slate-400 mt-0.5 pl-5">Exp: ${new Date(c.validUntil).toLocaleDateString()}</p>
+                        </div>
                         ${badge}
                     </div>
-                    <div class="space-y-2 mb-4">
-                        <div class="flex gap-2">
-                            <input readonly value="${c.id}" class="flex-1 bg-slate-100 border-0 p-2 rounded-lg text-[10px] font-bold text-slate-600" onclick="this.select()">
-                            <button onclick="navigator.clipboard.writeText('${c.id}');alert('ID Disalin!')" class="bg-white border border-slate-200 px-2 rounded-lg text-slate-400 hover:text-indigo-600"><i class="fa-regular fa-copy"></i></button>
+                    
+                    <div class="space-y-2 mb-4 bg-slate-50/50 p-2 rounded-xl border border-slate-100">
+                        <div class="flex gap-2 items-center">
+                            <span class="text-[9px] font-bold text-slate-400 w-8">ID</span>
+                            <div class="flex-1 flex gap-1 bg-white border border-slate-200 rounded-lg p-1">
+                                <input readonly value="${c.id}" class="flex-1 bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full cursor-pointer" onclick="this.select()">
+                                <button onclick="copyText('${c.id}')" class="text-slate-400 hover:text-indigo-600 px-1"><i class="fa-regular fa-copy"></i></button>
+                            </div>
                         </div>
-                        <div class="flex gap-2">
-                            <input readonly value="${c.token}" class="flex-1 bg-slate-100 border-0 p-2 rounded-lg text-[10px] font-mono text-slate-500" onclick="this.select()">
-                            <button onclick="navigator.clipboard.writeText('${c.token}');alert('Kode Disalin!')" class="bg-white border border-slate-200 px-2 rounded-lg text-slate-400 hover:text-indigo-600"><i class="fa-regular fa-copy"></i></button>
+                        <div class="flex gap-2 items-center">
+                            <span class="text-[9px] font-bold text-slate-400 w-8">KEY</span>
+                            <div class="flex-1 flex gap-1 bg-white border border-slate-200 rounded-lg p-1">
+                                <input readonly value="${c.token}" class="flex-1 bg-transparent text-[10px] font-mono text-slate-400 outline-none w-full cursor-pointer truncate" onclick="this.select()">
+                                <button onclick="copyText('${c.token}')" class="text-slate-400 hover:text-indigo-600 px-1"><i class="fa-regular fa-copy"></i></button>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex gap-2">${actionBtn}<button onclick="del('${c.id}')" class="w-9 bg-slate-100 rounded-lg text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button></div>
+
+                    <div class="flex gap-2">
+                        ${actionBtn}
+                        <button onclick="del('${c.id}')" class="w-10 bg-slate-100 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
                 </div>`;
                 container.innerHTML += html;
             });
         }
 
-        // --- FUNGSI DELETE YANG AMAN ---
+        // --- FUNGSI HAPUS (SAFE DELETE) ---
         function del(id) {
-            if(confirm("Yakin ingin menghapus Client ini secara permanen?")) {
-                // 1. Ambil data HANYA dari key 'clients'
+            if(confirm("Yakin ingin menghapus Client ini? Data tidak bisa dikembalikan.")) {
                 const rawData = localStorage.getItem('clients');
-                
                 if (rawData) {
                     let db = JSON.parse(rawData);
-                    // 2. Filter array
+                    // Filter hanya data client, JANGAN sentuh key config
                     const newData = db.filter(c => c.id !== id);
-                    // 3. Simpan kembali HANYA ke key 'clients'
                     localStorage.setItem('clients', JSON.stringify(newData));
-                    // 4. Update UI
                     loadClients();
                 }
             }
         }
 
+        // --- FUNGSI BLOCK/UNBLOCK (SMART FILE DETECTION) ---
         async function toggleBan(id, action, btn) {
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
             
-            if(!token || !gistId) return alert("Setting GitHub Token & Gist ID dulu!");
+            if(!token || !gistId) return alert("Token GitHub / Gist ID belum dikonfigurasi!");
 
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<span class="loader"></span>';
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span class="loader"></span> Proses...';
             btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
 
             try {
-                // 1. Ambil Data Gist
+                // 1. Fetch Data Gist
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, {
                     headers: { Authorization: `token ${token}` }
                 });
                 
-                if(!res.ok) throw new Error("Gagal akses GitHub. Cek Token/ID Gist.");
+                if(!res.ok) throw new Error("Gagal koneksi ke GitHub (404/403). Cek Token.");
                 const data = await res.json();
 
-                // 2. Deteksi File
+                // 2. Deteksi Nama File (blocklist.json atau blacklist.json)
                 const fileNames = Object.keys(data.files);
-                if (fileNames.length === 0) throw new Error("Gist kosong (tidak ada file).");
+                if (fileNames.length === 0) throw new Error("Gist kosong!");
                 
-                const targetFileName = fileNames.includes('blacklist.json') ? 'blacklist.json' : fileNames[0];
-                
+                // Prioritaskan 'blocklist.json' (versi Anda saat ini), lalu 'blacklist.json'
+                let targetFileName = fileNames.find(f => f === 'blocklist.json') || 
+                                     fileNames.find(f => f === 'blacklist.json') || 
+                                     fileNames[0];
+
+                console.log("Target File:", targetFileName); // Debugging
+
+                // 3. Baca Konten Lama
                 let content = data.files[targetFileName].content || '[]';
                 let blacklist = [];
-                try {
-                    blacklist = JSON.parse(content);
-                } catch (e) {
-                    blacklist = []; 
-                }
+                try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
 
-                // 3. Modifikasi List
+                // 4. Update List
                 if(action === 'ban') {
                     if(!blacklist.includes(id)) blacklist.push(id);
                 } else {
                     blacklist = blacklist.filter(x => x !== id);
                 }
 
-                // 4. Update Gist
+                // 5. Kirim Update ke GitHub
                 const updatePayload = { files: {} };
                 updatePayload.files[targetFileName] = { content: JSON.stringify(blacklist) };
 
-                await fetch(`https://api.github.com/gists/${gistId}`, {
+                const patchRes = await fetch(`https://api.github.com/gists/${gistId}`, {
                     method: 'PATCH',
                     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatePayload)
                 });
+                
+                if(!patchRes.ok) throw new Error("Gagal update data ke GitHub.");
 
-                // 5. Update Lokal
+                // 6. Update Status Lokal
                 let db = JSON.parse(localStorage.getItem('clients') || '[]');
                 const idx = db.findIndex(c => c.id === id);
-                if(idx !== -1) db[idx].status = (action === 'ban' ? 'banned' : 'active');
-                localStorage.setItem('clients', JSON.stringify(db));
+                if(idx !== -1) {
+                    db[idx].status = (action === 'ban' ? 'banned' : 'active');
+                    localStorage.setItem('clients', JSON.stringify(db));
+                }
                 
                 loadClients();
-                alert(action==='ban' ? "AKSES DIBLOKIR!" : "AKSES DIBUKA!");
+                // alert(action==='ban' ? "Berhasil: Client Diblokir!" : "Berhasil: Akses Dibuka!");
 
             } catch(e) {
                 alert("Error: " + e.message); 
-                btn.innerHTML = originalHtml; 
-                btn.disabled = false; 
+            } finally {
+                btn.innerHTML = originalContent; 
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
             }
+        }
+
+        // Helper Copy
+        function copyText(text) {
+            navigator.clipboard.writeText(text);
+            // Visual feedback kecil bisa ditambahkan disini jika mau
         }
     </script>
 

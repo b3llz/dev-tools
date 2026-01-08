@@ -230,13 +230,69 @@
             });
         }
 
-        function del(id) {
-            if(confirm("Hapus client ini?")) {
-                let db = JSON.parse(localStorage.getItem('clients') || '[]');
-                db = db.filter(c => c.id !== id);
-                localStorage.setItem('clients', JSON.stringify(db));
-                loadClients();
+                // --- FUNGSI HAPUS PERMANEN (AUTO-BAN & DELETE) ---
+        async function del(id) {
+            if(!confirm("PERINGATAN KERAS:\n\nTindakan ini akan:\n1. Memblokir ID ini di Server (Gist) selamanya.\n2. Menghapus data dari Admin Panel.\n\nClient tidak akan bisa login lagi. Lanjutkan?")) {
+                return;
             }
+
+            // Tampilkan Loading
+            const originalText = document.body.innerHTML;
+            // (Opsional: Kita biarkan UI tetap jalan, tapi tampilkan alert proses)
+            
+            const token = localStorage.getItem('gh_token');
+            const gistId = localStorage.getItem('gh_gist');
+
+            if(!token || !gistId) {
+                alert("Gagal: Token/Gist ID belum disetting. Data hanya dihapus dari HP ini.");
+                localDelete(id);
+                return;
+            }
+
+            try {
+                // 1. AMBIL DATA GIST TERBARU
+                const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+                    headers: { Authorization: `token ${token}` }
+                });
+                if(!res.ok) throw new Error("Gagal koneksi ke GitHub.");
+                
+                const data = await res.json();
+                const fileNames = Object.keys(data.files);
+                const targetFileName = fileNames.find(f => f.includes('json')) || fileNames[0]; // Auto-detect blocklist.json
+
+                // 2. MASUKKAN ID KE BLACKLIST (JIKA BELUM ADA)
+                let content = data.files[targetFileName].content || '[]';
+                let blacklist = [];
+                try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
+
+                if(!blacklist.includes(id)) {
+                    blacklist.push(id);
+                    
+                    // 3. UPLOAD KE GITHUB
+                    await fetch(`https://api.github.com/gists/${gistId}`, {
+                        method: 'PATCH',
+                        headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ files: { [targetFileName]: { content: JSON.stringify(blacklist) } } })
+                    });
+                }
+
+                // 4. JIKA SUKSES, BARU HAPUS DARI HP ADMIN
+                localDelete(id);
+                alert("SUKSES: Data Client telah dimusnahkan. Akses dicabut permanen.");
+
+            } catch(e) {
+                alert("Error saat memblokir online: " + e.message + "\n\nData belum dihapus dari Admin agar Anda bisa mencoba lagi.");
+            }
+        }
+
+        // Fungsi kecil untuk hapus local storage
+        function localDelete(id) {
+            let db = JSON.parse(localStorage.getItem('clients') || '[]');
+            const newData = db.filter(c => c.id !== id);
+            localStorage.setItem('clients', JSON.stringify(newData));
+            loadClients();
+            }
+
         }
 
         async function toggleBan(id, action, btn) {

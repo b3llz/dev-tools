@@ -286,171 +286,47 @@
                     // Filter hanya data client, JANGAN sentuh key config
                     const newData = db.filter(c => c.id !== id);
                     localStorage.setItem('clients', JSON.stringify(newData));
-                    // --- REPLACE KODE INI KE ADMIN PANEL ANDA ---
-async function toggleBan(id, action, btn) {
-    const token = localStorage.getItem('gh_token');
-    const gistId = localStorage.getItem('gh_gist');
-    
-    if(!token || !gistId) return alert("Token/ID Gist belum diisi!");
-
-    const originalContent = btn.innerHTML;
-    btn.innerHTML = '<span class="loader"></span> Cek...';
-    btn.disabled = true;
-
-    try {
-        console.log("Mencoba connect ke Gist ID:", gistId);
-        
-        // 1. Cek Koneksi
-        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-            headers: { Authorization: `token ${token}` }
-        });
-        
-        // DIAGNOSA ERROR LEBIH DETAIL
-        if(!res.ok) {
-            if(res.status === 404) throw new Error("Gist ID Tidak Ditemukan (404).\nPastikan ID Gist benar dan milik akun Anda.");
-            if(res.status === 401) throw new Error("Token Salah/Expired (401).\nBuat Token baru.");
-            if(res.status === 403) throw new Error("Token Tidak Punya Izin (403).\nAnda lupa centang 'gist' saat buat token, atau ini token 'Fine-grained' tanpa izin Read/Write.");
-            throw new Error(`Error GitHub: ${res.status} ${res.statusText}`);
-        }
-
-        const data = await res.json();
-        const fileNames = Object.keys(data.files);
-        console.log("File ditemukan:", fileNames);
-
-        // 2. Cek Nama File
-        // Kita cari file yang namanya mengandung 'json'
-        let targetFileName = fileNames.find(f => f.includes('json')) || fileNames[0];
-        
-        // Peringatan jika nama file salah
-        if(targetFileName !== 'blocklist.json' && targetFileName !== 'blacklist.json') {
-            if(!confirm(`PERINGATAN: Nama file di Gist Anda adalah "${targetFileName}", bukan "blocklist.json".\n\nAplikasi Client mungkin tidak akan merespon.\nTetap lanjutkan?`)) {
-                throw new Error("Dibatalkan user (Salah nama file).");
+                    loadClients();
+                }
             }
         }
 
-        // 3. Proses Update
-        let content = data.files[targetFileName].content || '[]';
-        let blacklist = [];
-        try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
+        // --- FUNGSI BLOCK/UNBLOCK (SMART FILE DETECTION) ---
+        async function toggleBan(id, action, btn) {
+            const token = localStorage.getItem('gh_token');
+            const gistId = localStorage.getItem('gh_gist');
+            
+            if(!token || !gistId) return alert("Token GitHub / Gist ID belum dikonfigurasi!");
 
-        if(action === 'ban') {
-            if(!blacklist.includes(id)) blacklist.push(id);
-        } else {
-            blacklist = blacklist.filter(x => x !== id);
-        }
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span class="loader"></span> Proses...';
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
 
-        const updatePayload = { files: {} };
-        updatePayload.files[targetFileName] = { content: JSON.stringify(blacklist) };
+            try {
+                // 1. Fetch Data Gist
+                const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+                    headers: { Authorization: `token ${token}` }
+                });
+                
+                if(!res.ok) throw new Error("Gagal koneksi ke GitHub (404/403). Cek Token.");
+                const data = await res.json();
 
-        const patchRes = await fetch(`https://api.github.com/gists/${gistId}`, {
-            method: 'PATCH',
-            headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatePayload)
-        });
+                // 2. Deteksi Nama File (blocklist.json atau blacklist.json)
+                const fileNames = Object.keys(data.files);
+                if (fileNames.length === 0) throw new Error("Gist kosong!");
+                
+                // Prioritaskan 'blocklist.json' (versi Anda saat ini), lalu 'blacklist.json'
+                let targetFileName = fileNames.find(f => f === 'blocklist.json') || 
+                                     fileNames.find(f => f === 'blacklist.json') || 
+                                     fileNames[0];
 
-        if(!patchRes.ok) throw new Error("Gagal menyimpan data (Write Error). Cek izin Token.");
+                console.log("Target File:", targetFileName); // Debugging
 
-        // Update Lokal
-        let db = JSON.parse(localStorage.getItem('clients') || '[]');
-        const idx = db.findIndex(c => c.id === id);
-        if(idx !== -1) {
-            db[idx].status = (action === 'ban' ? 'banned' : 'active');
-            localStorage.setItem('clients', JSON.stringify(db));
-        }
-        
-        loadClients();
-        alert(`Sukses! File "${targetFileName}" diperbarui.`);
-
-    } catch(e) {
-        alert(e.message); 
-    } finally {
-        btn.innerHTML = originalContent; 
-        btn.disabled = false;
-    }
-}
-/ --- FUNGSI BLOCK/UNBLOCK (SMART FILE DETECTION) ---
-        // --- REPLACE KODE INI KE ADMIN PANEL ANDA ---
-async function toggleBan(id, action, btn) {
-    const token = localStorage.getItem('gh_token');
-    const gistId = localStorage.getItem('gh_gist');
-    
-    if(!token || !gistId) return alert("Token/ID Gist belum diisi!");
-
-    const originalContent = btn.innerHTML;
-    btn.innerHTML = '<span class="loader"></span> Cek...';
-    btn.disabled = true;
-
-    try {
-        console.log("Mencoba connect ke Gist ID:", gistId);
-        
-        // 1. Cek Koneksi
-        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-            headers: { Authorization: `token ${token}` }
-        });
-        
-        // DIAGNOSA ERROR LEBIH DETAIL
-        if(!res.ok) {
-            if(res.status === 404) throw new Error("Gist ID Tidak Ditemukan (404).\nPastikan ID Gist benar dan milik akun Anda.");
-            if(res.status === 401) throw new Error("Token Salah/Expired (401).\nBuat Token baru.");
-            if(res.status === 403) throw new Error("Token Tidak Punya Izin (403).\nAnda lupa centang 'gist' saat buat token, atau ini token 'Fine-grained' tanpa izin Read/Write.");
-            throw new Error(`Error GitHub: ${res.status} ${res.statusText}`);
-        }
-
-        const data = await res.json();
-        const fileNames = Object.keys(data.files);
-        console.log("File ditemukan:", fileNames);
-
-        // 2. Cek Nama File
-        // Kita cari file yang namanya mengandung 'json'
-        let targetFileName = fileNames.find(f => f.includes('json')) || fileNames[0];
-        
-        // Peringatan jika nama file salah
-        if(targetFileName !== 'blocklist.json' && targetFileName !== 'blacklist.json') {
-            if(!confirm(`PERINGATAN: Nama file di Gist Anda adalah "${targetFileName}", bukan "blocklist.json".\n\nAplikasi Client mungkin tidak akan merespon.\nTetap lanjutkan?`)) {
-                throw new Error("Dibatalkan user (Salah nama file).");
-            }
-        }
-
-        // 3. Proses Update
-        let content = data.files[targetFileName].content || '[]';
-        let blacklist = [];
-        try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
-
-        if(action === 'ban') {
-            if(!blacklist.includes(id)) blacklist.push(id);
-        } else {
-            blacklist = blacklist.filter(x => x !== id);
-        }
-
-        const updatePayload = { files: {} };
-        updatePayload.files[targetFileName] = { content: JSON.stringify(blacklist) };
-
-        const patchRes = await fetch(`https://api.github.com/gists/${gistId}`, {
-            method: 'PATCH',
-            headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatePayload)
-        });
-
-        if(!patchRes.ok) throw new Error("Gagal menyimpan data (Write Error). Cek izin Token.");
-
-        // Update Lokal
-        let db = JSON.parse(localStorage.getItem('clients') || '[]');
-        const idx = db.findIndex(c => c.id === id);
-        if(idx !== -1) {
-            db[idx].status = (action === 'ban' ? 'banned' : 'active');
-            localStorage.setItem('clients', JSON.stringify(db));
-        }
-        
-        loadClients();
-        alert(`Sukses! File "${targetFileName}" diperbarui.`);
-
-    } catch(e) {
-        alert(e.message); 
-    } finally {
-        btn.innerHTML = originalContent; 
-        btn.disabled = false;
-    }
-}
+                // 3. Baca Konten Lama
+                let content = data.files[targetFileName].content || '[]';
+                let blacklist = [];
+                try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
 
                 // 4. Update List
                 if(action === 'ban') {

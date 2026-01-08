@@ -12,7 +12,6 @@
         body{font-family:'Plus Jakarta Sans',sans-serif;background-color:#f8fafc}
         .loader{border:2px solid #e2e8f0;border-top:2px solid #4f46e5;border-radius:50%;width:14px;height:14px;animation:spin 1s linear infinite;display:inline-block}
         @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-        /* Smooth Fade In */
         .animate-fade { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -39,8 +38,8 @@
                         <input id="inToken" type="password" class="w-full bg-white border border-slate-200 p-2.5 rounded-lg text-sm font-mono outline-none focus:border-indigo-500 mt-1" placeholder="ghp_xxxxxxxxxxxx">
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">ID Gist / Link Gist</label>
-                        <input id="inGist" type="text" class="w-full bg-white border border-slate-200 p-2.5 rounded-lg text-sm font-mono outline-none focus:border-indigo-500 mt-1" placeholder="Paste link Gist disini...">
+                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">ID Gist (Kode Acak)</label>
+                        <input id="inGist" type="text" class="w-full bg-white border border-slate-200 p-2.5 rounded-lg text-sm font-mono outline-none focus:border-indigo-500 mt-1" placeholder="Contoh: 07d95837ff...">
                     </div>
                 </div>
 
@@ -71,17 +70,14 @@
         
         <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden group">
             <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-2xl -mr-8 -mt-8 transition group-hover:bg-indigo-100"></div>
-            
             <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2 relative z-10">
                 <i class="fa-solid fa-plus-circle text-indigo-500"></i> Buat Lisensi Baru
             </h2>
-            
             <div class="space-y-4 relative z-10">
                 <div>
                     <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Nama Client / Toko</label>
                     <input id="tenantName" type="text" placeholder="Contoh: Kopi Senja" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition mt-1">
                 </div>
-                
                 <div>
                     <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Masa Aktif</label>
                     <div class="flex gap-3 mt-1">
@@ -93,7 +89,6 @@
                         </select>
                     </div>
                 </div>
-
                 <button type="button" onclick="generate()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-[0.98] transition flex items-center justify-center gap-2 mt-2">
                     <i class="fa-solid fa-bolt text-yellow-400"></i> GENERATE KEY
                 </button>
@@ -105,42 +100,30 @@
                 <h3 class="font-bold text-slate-400 text-xs uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-users"></i> Daftar Client
                 </h3>
-                <button type="button" onclick="loadClients()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold bg-indigo-50 px-3 py-1 rounded-full transition">
-                    Refresh Data
-                </button>
+                <button type="button" onclick="loadClients()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold bg-indigo-50 px-3 py-1 rounded-full transition">Refresh Data</button>
             </div>
             <div id="clientList" class="space-y-3 pb-10"></div>
         </div>
     </div>
 
     <script>
-        // ============================================================
-        // LOGIC START
-        // ============================================================
-        
         document.addEventListener('DOMContentLoaded', () => {
             loadClients();
-            // Cek kelengkapan config
             if(!localStorage.getItem('gh_token') || !localStorage.getItem('app_secret')) {
-                // Beri jeda sedikit agar animasi smooth
                 setTimeout(() => toggleSettings(), 500);
             }
         });
 
-        // --- MANAGEMEN UI ---
         function toggleSettings() {
             const modal = document.getElementById('settingsModal');
             modal.classList.toggle('hidden');
-            
             if(!modal.classList.contains('hidden')) {
-                // Load data saat modal dibuka
                 document.getElementById('inKey').value = localStorage.getItem('app_secret') || '';
                 document.getElementById('inToken').value = localStorage.getItem('gh_token') || '';
                 document.getElementById('inGist').value = localStorage.getItem('gh_gist') || '';
             }
         }
 
-        // --- SIMPAN KONFIGURASI (AMAN) ---
         function saveConfig() {
             const key = document.getElementById('inKey').value.trim();
             const token = document.getElementById('inToken').value.trim();
@@ -148,32 +131,22 @@
 
             if(!key || !token || !gistInput) return alert("Harap isi semua kolom konfigurasi!");
 
-            // Ambil ID Gist saja jika user paste URL lengkap
             if(gistInput.includes('/')) {
                 if(gistInput.endsWith('/')) gistInput = gistInput.slice(0, -1);
                 gistInput = gistInput.split('/').pop();
             }
 
-            // Simpan ke LocalStorage dengan key khusus (Terpisah dari data client)
             localStorage.setItem('app_secret', key);
             localStorage.setItem('gh_token', token);
             localStorage.setItem('gh_gist', gistInput);
             
             toggleSettings();
-            
-            // Tampilkan notifikasi kecil
-            const btn = document.querySelector('button[onclick="loadClients()"]');
-            const oriText = btn.innerText;
-            btn.innerText = "Tersimpan!";
-            setTimeout(() => btn.innerText = oriText, 2000);
-            
             loadClients();
         }
 
-        // --- GENERATE LISENSI ---
         function generate() {
             const secretKey = localStorage.getItem('app_secret');
-            if(!secretKey) return alert("Secret Key belum disetting! Buka menu gear di pojok kanan atas.");
+            if(!secretKey) return alert("Secret Key belum disetting!");
 
             const name = document.getElementById('tenantName').value;
             const val = parseInt(document.getElementById('durationVal').value);
@@ -181,10 +154,7 @@
 
             if(!name) return alert("Nama Client tidak boleh kosong!");
 
-            // Buat ID Unik
             const id = `ID-${name.replace(/[^a-zA-Z0-9]/g, '').substring(0,4).toUpperCase()}-${Math.floor(1000+Math.random()*9000)}`;
-            
-            // Hitung Tanggal Expired
             const date = new Date();
             if(unit === 'month') date.setMonth(date.getMonth() + val);
             if(unit === 'year') date.setFullYear(date.getFullYear() + val);
@@ -193,42 +163,31 @@
             const data = { id, tenant: name, validUntil: date.toISOString() };
             
             try {
-                // Enkripsi Data
                 const token = CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
                 const newClient = { ...data, token, status: 'active', createdAt: new Date().toISOString() };
                 
-                // Simpan ke Database Lokal
                 let db = JSON.parse(localStorage.getItem('clients') || '[]');
                 db.unshift(newClient);
                 localStorage.setItem('clients', JSON.stringify(db));
                 
                 loadClients();
-                document.getElementById('tenantName').value = ''; // Reset Form
+                document.getElementById('tenantName').value = '';
                 alert("Lisensi Berhasil Dibuat!");
-            } catch (e) { 
-                alert("Gagal membuat lisensi. Pastikan Secret Key benar.\nError: " + e.message); 
-            }
+            } catch (e) { alert("Gagal membuat lisensi: " + e.message); }
         }
 
-        // --- LOAD DATA CLIENT ---
         function loadClients() {
             const db = JSON.parse(localStorage.getItem('clients') || '[]');
             const container = document.getElementById('clientList');
             container.innerHTML = '';
 
             if(db.length === 0) {
-                container.innerHTML = `
-                <div class="text-center py-10 opacity-50">
-                    <i class="fa-regular fa-folder-open text-4xl text-slate-300 mb-2"></i>
-                    <p class="text-xs text-slate-400">Belum ada client terdaftar.</p>
-                </div>`;
+                container.innerHTML = `<div class="text-center py-10 opacity-50"><p class="text-xs text-slate-400">Belum ada client terdaftar.</p></div>`;
                 return;
             }
 
             db.forEach(c => {
                 const isBanned = c.status === 'banned';
-                
-                // Tombol Action (Ban/Unban)
                 const actionBtn = isBanned 
                     ? `<button onclick="toggleBan('${c.id}', 'unban', this)" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-lg text-[10px] font-bold shadow-md shadow-emerald-500/20 transition flex items-center justify-center gap-1"><i class="fa-solid fa-lock-open"></i> BUKA AKSES</button>`
                     : `<button onclick="toggleBan('${c.id}', 'ban', this)" class="flex-1 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 hover:border-rose-300 py-2.5 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1"><i class="fa-solid fa-power-off"></i> SHUTDOWN</button>`;
@@ -243,31 +202,25 @@
                 <div class="p-4 rounded-2xl shadow-sm border ${bgClass} transition-all duration-300 group">
                     <div class="flex justify-between items-start mb-3">
                         <div>
-                            <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                <i class="fa-solid fa-store text-slate-400"></i> ${c.tenant}
-                            </h4>
+                            <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-store text-slate-400"></i> ${c.tenant}</h4>
                             <p class="text-[10px] text-slate-400 mt-0.5 pl-5">Exp: ${new Date(c.validUntil).toLocaleDateString()}</p>
                         </div>
                         ${badge}
                     </div>
-                    
                     <div class="space-y-2 mb-4 bg-slate-50/50 p-2 rounded-xl border border-slate-100">
                         <div class="flex gap-2 items-center">
                             <span class="text-[9px] font-bold text-slate-400 w-8">ID</span>
                             <div class="flex-1 flex gap-1 bg-white border border-slate-200 rounded-lg p-1">
                                 <input readonly value="${c.id}" class="flex-1 bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full cursor-pointer" onclick="this.select()">
-                                <button onclick="copyText('${c.id}')" class="text-slate-400 hover:text-indigo-600 px-1"><i class="fa-regular fa-copy"></i></button>
                             </div>
                         </div>
                         <div class="flex gap-2 items-center">
                             <span class="text-[9px] font-bold text-slate-400 w-8">KEY</span>
                             <div class="flex-1 flex gap-1 bg-white border border-slate-200 rounded-lg p-1">
                                 <input readonly value="${c.token}" class="flex-1 bg-transparent text-[10px] font-mono text-slate-400 outline-none w-full cursor-pointer truncate" onclick="this.select()">
-                                <button onclick="copyText('${c.token}')" class="text-slate-400 hover:text-indigo-600 px-1"><i class="fa-regular fa-copy"></i></button>
                             </div>
                         </div>
                     </div>
-
                     <div class="flex gap-2">
                         ${actionBtn}
                         <button onclick="del('${c.id}')" class="w-10 bg-slate-100 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition"><i class="fa-solid fa-trash-can"></i></button>
@@ -277,21 +230,15 @@
             });
         }
 
-        // --- FUNGSI HAPUS (SAFE DELETE) ---
         function del(id) {
-            if(confirm("Yakin ingin menghapus Client ini? Data tidak bisa dikembalikan.")) {
-                const rawData = localStorage.getItem('clients');
-                if (rawData) {
-                    let db = JSON.parse(rawData);
-                    // Filter hanya data client, JANGAN sentuh key config
-                    const newData = db.filter(c => c.id !== id);
-                    localStorage.setItem('clients', JSON.stringify(newData));
-                    loadClients();
-                }
+            if(confirm("Hapus client ini?")) {
+                let db = JSON.parse(localStorage.getItem('clients') || '[]');
+                db = db.filter(c => c.id !== id);
+                localStorage.setItem('clients', JSON.stringify(db));
+                loadClients();
             }
         }
 
-        // --- FUNGSI BLOCK/UNBLOCK (SMART FILE DETECTION) ---
         async function toggleBan(id, action, btn) {
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
@@ -301,53 +248,41 @@
             const originalContent = btn.innerHTML;
             btn.innerHTML = '<span class="loader"></span> Proses...';
             btn.disabled = true;
-            btn.classList.add('opacity-70', 'cursor-not-allowed');
 
             try {
-                // 1. Fetch Data Gist
+                // 1. Fetch
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, {
                     headers: { Authorization: `token ${token}` }
                 });
                 
-                if(!res.ok) throw new Error("Gagal koneksi ke GitHub (404/403). Cek Token.");
+                if(!res.ok) throw new Error(`Gagal koneksi (Error: ${res.status}). Cek Token.`);
                 const data = await res.json();
-
-                // 2. Deteksi Nama File (blocklist.json atau blacklist.json)
-                const fileNames = Object.keys(data.files);
-                if (fileNames.length === 0) throw new Error("Gist kosong!");
                 
-                // Prioritaskan 'blocklist.json' (versi Anda saat ini), lalu 'blacklist.json'
-                let targetFileName = fileNames.find(f => f === 'blocklist.json') || 
-                                     fileNames.find(f => f === 'blacklist.json') || 
-                                     fileNames[0];
+                // 2. Smart Detect (Cari file .json)
+                const fileNames = Object.keys(data.files);
+                const targetFileName = fileNames.find(f => f === 'blocklist.json') || fileNames[0];
 
-                console.log("Target File:", targetFileName); // Debugging
+                if(!targetFileName) throw new Error("Gist kosong!");
 
-                // 3. Baca Konten Lama
+                // 3. Update
                 let content = data.files[targetFileName].content || '[]';
                 let blacklist = [];
                 try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
 
-                // 4. Update List
                 if(action === 'ban') {
                     if(!blacklist.includes(id)) blacklist.push(id);
                 } else {
                     blacklist = blacklist.filter(x => x !== id);
                 }
 
-                // 5. Kirim Update ke GitHub
-                const updatePayload = { files: {} };
-                updatePayload.files[targetFileName] = { content: JSON.stringify(blacklist) };
-
-                const patchRes = await fetch(`https://api.github.com/gists/${gistId}`, {
+                // 4. Push
+                await fetch(`https://api.github.com/gists/${gistId}`, {
                     method: 'PATCH',
                     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatePayload)
+                    body: JSON.stringify({ files: { [targetFileName]: { content: JSON.stringify(blacklist) } } })
                 });
-                
-                if(!patchRes.ok) throw new Error("Gagal update data ke GitHub.");
 
-                // 6. Update Status Lokal
+                // 5. Update Local
                 let db = JSON.parse(localStorage.getItem('clients') || '[]');
                 const idx = db.findIndex(c => c.id === id);
                 if(idx !== -1) {
@@ -356,23 +291,15 @@
                 }
                 
                 loadClients();
-                // alert(action==='ban' ? "Berhasil: Client Diblokir!" : "Berhasil: Akses Dibuka!");
+                alert(action === 'ban' ? "SUKSES: Client Diblokir" : "SUKSES: Akses Dibuka");
 
             } catch(e) {
-                alert("Error: " + e.message); 
+                alert("ERROR: " + e.message); 
             } finally {
                 btn.innerHTML = originalContent; 
                 btn.disabled = false;
-                btn.classList.remove('opacity-70', 'cursor-not-allowed');
             }
         }
-
-        // Helper Copy
-        function copyText(text) {
-            navigator.clipboard.writeText(text);
-            // Visual feedback kecil bisa ditambahkan disini jika mau
-        }
     </script>
-
 </body>
 </html>

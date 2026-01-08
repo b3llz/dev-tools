@@ -73,7 +73,7 @@
         </div>
     </div>
 
-    <script>
+        <script>
         // INIT
         document.addEventListener('DOMContentLoaded', () => {
             loadClients();
@@ -86,7 +86,6 @@
             if(!modal.classList.contains('hidden')) {
                 document.getElementById('inKey').value = localStorage.getItem('app_secret') || '';
                 document.getElementById('inToken').value = localStorage.getItem('gh_token') || '';
-                // Tampilkan ID Gist yang tersimpan
                 document.getElementById('inGist').value = localStorage.getItem('gh_gist') || '';
             }
         }
@@ -98,27 +97,22 @@
 
             if(!key || !token || !gistInput) return alert("Semua kolom wajib diisi!");
 
-            // --- LOGIKA EKSTRAK ID DARI URL ---
-            // Menghapus slash di akhir jika ada
+            // Bersihkan URL Gist untuk ambil ID-nya saja
             if(gistInput.endsWith('/')) gistInput = gistInput.slice(0, -1);
-            
-            // Mengambil bagian terakhir dari URL (ID Gist)
-            // Jika user input URL: https://gist.github.com/user/123abc... -> Ambil 123abc...
-            // Jika user input ID: 123abc... -> Tetap ambil 123abc...
             const gistId = gistInput.split('/').pop();
 
             localStorage.setItem('app_secret', key);
             localStorage.setItem('gh_token', token);
-            localStorage.setItem('gh_gist', gistId); // Simpan ID bersihnya saja
+            localStorage.setItem('gh_gist', gistId);
             
             toggleSettings();
-            alert("Konfigurasi Tersimpan! ID Gist: " + gistId);
-            loadClients(); // Refresh list untuk memastikan koneksi
+            alert("Konfigurasi Tersimpan!");
+            loadClients();
         }
 
         function generate() {
             const secretKey = localStorage.getItem('app_secret');
-            if(!secretKey) return alert("Masuk ke Pengaturan (Icon Gear) dan isi Secret Key dulu!");
+            if(!secretKey) return alert("Setting dulu Secret Key-nya!");
 
             const name = document.getElementById('tenantName').value;
             const val = parseInt(document.getElementById('durationVal').value);
@@ -137,12 +131,14 @@
             try {
                 const token = CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
                 const newClient = { ...data, token, status: 'active' };
+                
                 let db = JSON.parse(localStorage.getItem('clients') || '[]');
                 db.unshift(newClient);
                 localStorage.setItem('clients', JSON.stringify(db));
+                
                 loadClients();
                 document.getElementById('tenantName').value = '';
-            } catch (e) { alert("Gagal enkripsi. Cek koneksi internet."); }
+            } catch (e) { alert("Gagal enkripsi: " + e.message); }
         }
 
         function loadClients() {
@@ -157,6 +153,7 @@
 
             db.forEach(c => {
                 const isBanned = c.status === 'banned';
+                
                 const actionBtn = isBanned 
                     ? `<button onclick="toggleBan('${c.id}', 'unban', this)" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-lg text-[10px] font-bold shadow-md shadow-emerald-500/20"><i class="fa-solid fa-lock-open mr-1"></i> BUKA</button>`
                     : `<button onclick="toggleBan('${c.id}', 'ban', this)" class="flex-1 bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 py-2.5 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-power-off mr-1"></i> SHUTDOWN</button>`;
@@ -171,8 +168,14 @@
                         ${badge}
                     </div>
                     <div class="space-y-2 mb-4">
-                        <div class="flex gap-2"><input readonly value="${c.id}" class="flex-1 bg-slate-100 border-0 p-2 rounded-lg text-[10px] font-bold text-slate-600" onclick="this.select()"><button onclick="navigator.clipboard.writeText('${c.id}');alert('Disalin!')" class="bg-white border border-slate-200 px-2 rounded-lg text-slate-400"><i class="fa-regular fa-copy"></i></button></div>
-                        <div class="flex gap-2"><input readonly value="${c.token}" class="flex-1 bg-slate-100 border-0 p-2 rounded-lg text-[10px] font-mono text-slate-500" onclick="this.select()"><button onclick="navigator.clipboard.writeText('${c.token}');alert('Disalin!')" class="bg-white border border-slate-200 px-2 rounded-lg text-slate-400"><i class="fa-regular fa-copy"></i></button></div>
+                        <div class="flex gap-2">
+                            <input readonly value="${c.id}" class="flex-1 bg-slate-100 border-0 p-2 rounded-lg text-[10px] font-bold text-slate-600" onclick="this.select()">
+                            <button onclick="navigator.clipboard.writeText('${c.id}');alert('ID Disalin!')" class="bg-white border border-slate-200 px-2 rounded-lg text-slate-400 hover:text-indigo-600"><i class="fa-regular fa-copy"></i></button>
+                        </div>
+                        <div class="flex gap-2">
+                            <input readonly value="${c.token}" class="flex-1 bg-slate-100 border-0 p-2 rounded-lg text-[10px] font-mono text-slate-500" onclick="this.select()">
+                            <button onclick="navigator.clipboard.writeText('${c.token}');alert('Kode Disalin!')" class="bg-white border border-slate-200 px-2 rounded-lg text-slate-400 hover:text-indigo-600"><i class="fa-regular fa-copy"></i></button>
+                        </div>
                     </div>
                     <div class="flex gap-2">${actionBtn}<button onclick="del('${c.id}')" class="w-9 bg-slate-100 rounded-lg text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button></div>
                 </div>`;
@@ -180,6 +183,7 @@
             });
         }
 
+        // --- FUNGSI UPDATE YANG SUDAH DIPERBAIKI (SMART FILE DETECTION) ---
         async function toggleBan(id, action, btn) {
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
@@ -191,27 +195,57 @@
             btn.disabled = true;
 
             try {
-                const res = await fetch(`https://api.github.com/gists/${gistId}`, { headers: { Authorization: `token ${token}` } });
+                // 1. Ambil Data Gist
+                const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+                    headers: { Authorization: `token ${token}` }
+                });
+                
                 if(!res.ok) throw new Error("Gagal akses GitHub. Cek Token/ID Gist.");
                 const data = await res.json();
-                let blacklist = JSON.parse(data.files['blacklist.json'].content || '[]');
 
-                if(action === 'ban') { if(!blacklist.includes(id)) blacklist.push(id); }
-                else { blacklist = blacklist.filter(x => x !== id); }
+                // 2. DETEKSI NAMA FILE OTOMATIS (FIX ERROR 'undefined')
+                const fileNames = Object.keys(data.files);
+                if (fileNames.length === 0) throw new Error("Gist kosong (tidak ada file).");
+                
+                // Prioritaskan 'blacklist.json', jika tidak ada, ambil file pertama yang ditemukan
+                const targetFileName = fileNames.includes('blacklist.json') ? 'blacklist.json' : fileNames[0];
+                
+                // Ambil konten file
+                let content = data.files[targetFileName].content || '[]';
+                let blacklist = [];
+                try {
+                    blacklist = JSON.parse(content);
+                } catch (e) {
+                    blacklist = []; // Reset jika format rusak
+                }
+
+                // 3. Modifikasi List
+                if(action === 'ban') {
+                    if(!blacklist.includes(id)) blacklist.push(id);
+                } else {
+                    blacklist = blacklist.filter(x => x !== id);
+                }
+
+                // 4. Update Gist (Pakai nama file yang terdeteksi tadi)
+                const updatePayload = { files: {} };
+                updatePayload.files[targetFileName] = { content: JSON.stringify(blacklist) };
 
                 await fetch(`https://api.github.com/gists/${gistId}`, {
                     method: 'PATCH',
                     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ files: { 'blacklist.json': { content: JSON.stringify(blacklist) } } })
+                    body: JSON.stringify(updatePayload)
                 });
 
+                // 5. Update Lokal
                 let db = JSON.parse(localStorage.getItem('clients') || '[]');
                 const idx = db.findIndex(c => c.id === id);
                 if(idx !== -1) db[idx].status = (action === 'ban' ? 'banned' : 'active');
                 localStorage.setItem('clients', JSON.stringify(db));
+                
                 loadClients();
                 alert(action==='ban' ? "AKSES DIBLOKIR!" : "AKSES DIBUKA!");
-            } catch(e) { 
+
+            } catch(e) {
                 alert("Error: " + e.message); 
                 btn.innerHTML = originalHtml; 
                 btn.disabled = false; 
@@ -227,5 +261,6 @@
             }
         }
     </script>
+
 </body>
 </html>

@@ -33,8 +33,8 @@
                     <input id="inGist" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-mono outline-none focus:border-indigo-500" placeholder="https://gist.github.com/...">
                     <p class="text-[9px] text-slate-400 mt-1">*Paste link lengkap Gist atau ID-nya saja.</p>
                 </div>
-                <button onclick="saveConfig()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm mt-2 shadow-lg">Simpan Konfigurasi</button>
-                <button onclick="toggleSettings()" class="w-full text-slate-400 py-2 text-xs font-bold">Tutup</button>
+                <button type="button" onclick="saveConfig()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm mt-2 shadow-lg">Simpan Konfigurasi</button>
+                <button type="button" onclick="toggleSettings()" class="w-full text-slate-400 py-2 text-xs font-bold">Tutup</button>
             </div>
         </div>
     </div>
@@ -42,9 +42,9 @@
     <nav class="fixed top-0 w-full bg-white/80 backdrop-blur-md z-40 border-b border-slate-200 px-4 py-3 flex justify-between items-center shadow-sm">
         <div class="flex items-center gap-2">
             <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md"><i class="fa-solid fa-shield-halved"></i></div>
-            <h1 class="font-bold text-slate-800">HPP Admin</h1>
+            <h1 class="font-bold text-slate-800">Admin Panel</h1>
         </div>
-        <button onclick="toggleSettings()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-indigo-600 transition flex items-center justify-center"><i class="fa-solid fa-gear"></i></button>
+        <button type="button" onclick="toggleSettings()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-indigo-600 transition flex items-center justify-center"><i class="fa-solid fa-gear"></i></button>
     </nav>
 
     <div class="max-w-md mx-auto pt-24 px-4 space-y-6">
@@ -60,29 +60,34 @@
                         <option value="day">Hari</option>
                     </select>
                 </div>
-                <button onclick="generate()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2"><i class="fa-solid fa-bolt"></i> GENERATE KEY</button>
+                <button type="button" onclick="generate()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition flex items-center justify-center gap-2"><i class="fa-solid fa-bolt"></i> GENERATE KEY</button>
             </div>
         </div>
 
         <div>
             <div class="flex justify-between items-center px-1 mb-3">
                 <h3 class="font-bold text-slate-400 text-xs uppercase tracking-wider">Client List</h3>
-                <button onclick="loadClients()" class="text-indigo-500 text-xs font-bold">Refresh</button>
+                <button type="button" onclick="loadClients()" class="text-indigo-500 text-xs font-bold">Refresh</button>
             </div>
             <div id="clientList" class="space-y-3"></div>
         </div>
     </div>
 
-        <script>
+    <script>
         // INIT
         document.addEventListener('DOMContentLoaded', () => {
             loadClients();
-            if(!localStorage.getItem('gh_token') || !localStorage.getItem('app_secret')) toggleSettings();
+            // Cek apakah config ada, jika tidak ada baru buka modal
+            if(!localStorage.getItem('gh_token') || !localStorage.getItem('app_secret')) {
+                toggleSettings();
+            }
         });
 
         function toggleSettings() {
             const modal = document.getElementById('settingsModal');
             modal.classList.toggle('hidden');
+            
+            // Jika modal dibuka, isi form dengan data yang tersimpan (jika ada)
             if(!modal.classList.contains('hidden')) {
                 document.getElementById('inKey').value = localStorage.getItem('app_secret') || '';
                 document.getElementById('inToken').value = localStorage.getItem('gh_token') || '';
@@ -101,6 +106,7 @@
             if(gistInput.endsWith('/')) gistInput = gistInput.slice(0, -1);
             const gistId = gistInput.split('/').pop();
 
+            // Simpan ke Key Khusus (Bukan 'clients')
             localStorage.setItem('app_secret', key);
             localStorage.setItem('gh_token', token);
             localStorage.setItem('gh_gist', gistId);
@@ -183,7 +189,24 @@
             });
         }
 
-        // --- FUNGSI UPDATE YANG SUDAH DIPERBAIKI (SMART FILE DETECTION) ---
+        // --- FUNGSI DELETE YANG AMAN ---
+        function del(id) {
+            if(confirm("Yakin ingin menghapus Client ini secara permanen?")) {
+                // 1. Ambil data HANYA dari key 'clients'
+                const rawData = localStorage.getItem('clients');
+                
+                if (rawData) {
+                    let db = JSON.parse(rawData);
+                    // 2. Filter array
+                    const newData = db.filter(c => c.id !== id);
+                    // 3. Simpan kembali HANYA ke key 'clients'
+                    localStorage.setItem('clients', JSON.stringify(newData));
+                    // 4. Update UI
+                    loadClients();
+                }
+            }
+        }
+
         async function toggleBan(id, action, btn) {
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
@@ -203,20 +226,18 @@
                 if(!res.ok) throw new Error("Gagal akses GitHub. Cek Token/ID Gist.");
                 const data = await res.json();
 
-                // 2. DETEKSI NAMA FILE OTOMATIS (FIX ERROR 'undefined')
+                // 2. Deteksi File
                 const fileNames = Object.keys(data.files);
                 if (fileNames.length === 0) throw new Error("Gist kosong (tidak ada file).");
                 
-                // Prioritaskan 'blacklist.json', jika tidak ada, ambil file pertama yang ditemukan
                 const targetFileName = fileNames.includes('blacklist.json') ? 'blacklist.json' : fileNames[0];
                 
-                // Ambil konten file
                 let content = data.files[targetFileName].content || '[]';
                 let blacklist = [];
                 try {
                     blacklist = JSON.parse(content);
                 } catch (e) {
-                    blacklist = []; // Reset jika format rusak
+                    blacklist = []; 
                 }
 
                 // 3. Modifikasi List
@@ -226,7 +247,7 @@
                     blacklist = blacklist.filter(x => x !== id);
                 }
 
-                // 4. Update Gist (Pakai nama file yang terdeteksi tadi)
+                // 4. Update Gist
                 const updatePayload = { files: {} };
                 updatePayload.files[targetFileName] = { content: JSON.stringify(blacklist) };
 
@@ -249,15 +270,6 @@
                 alert("Error: " + e.message); 
                 btn.innerHTML = originalHtml; 
                 btn.disabled = false; 
-            }
-        }
-
-        function del(id) {
-            if(confirm("Hapus?")) {
-                let db = JSON.parse(localStorage.getItem('clients') || '[]');
-                db = db.filter(c => c.id !== id);
-                localStorage.setItem('clients', JSON.stringify(db));
-                loadClients();
             }
         }
     </script>

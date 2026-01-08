@@ -29,8 +29,9 @@
                     <input id="inToken" type="password" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-mono outline-none focus:border-indigo-500" placeholder="ghp_xxxxxxxxxxxx">
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold uppercase text-slate-400">Gist ID (Database)</label>
-                    <input id="inGist" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-mono outline-none focus:border-indigo-500" placeholder="ID Unik Gist">
+                    <label class="text-[10px] font-bold uppercase text-slate-400">Link Gist (Database)</label>
+                    <input id="inGist" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-mono outline-none focus:border-indigo-500" placeholder="https://gist.github.com/...">
+                    <p class="text-[9px] text-slate-400 mt-1">*Paste link lengkap Gist atau ID-nya saja.</p>
                 </div>
                 <button onclick="saveConfig()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm mt-2 shadow-lg">Simpan Konfigurasi</button>
                 <button onclick="toggleSettings()" class="w-full text-slate-400 py-2 text-xs font-bold">Tutup</button>
@@ -76,7 +77,6 @@
         // INIT
         document.addEventListener('DOMContentLoaded', () => {
             loadClients();
-            // Cek kelengkapan config
             if(!localStorage.getItem('gh_token') || !localStorage.getItem('app_secret')) toggleSettings();
         });
 
@@ -86,22 +86,34 @@
             if(!modal.classList.contains('hidden')) {
                 document.getElementById('inKey').value = localStorage.getItem('app_secret') || '';
                 document.getElementById('inToken').value = localStorage.getItem('gh_token') || '';
+                // Tampilkan ID Gist yang tersimpan
                 document.getElementById('inGist').value = localStorage.getItem('gh_gist') || '';
             }
         }
 
         function saveConfig() {
-            const key = document.getElementById('inKey').value;
-            const token = document.getElementById('inToken').value;
-            const gist = document.getElementById('inGist').value;
+            const key = document.getElementById('inKey').value.trim();
+            const token = document.getElementById('inToken').value.trim();
+            let gistInput = document.getElementById('inGist').value.trim();
 
-            if(!key || !token || !gist) return alert("Semua kolom wajib diisi!");
+            if(!key || !token || !gistInput) return alert("Semua kolom wajib diisi!");
+
+            // --- LOGIKA EKSTRAK ID DARI URL ---
+            // Menghapus slash di akhir jika ada
+            if(gistInput.endsWith('/')) gistInput = gistInput.slice(0, -1);
+            
+            // Mengambil bagian terakhir dari URL (ID Gist)
+            // Jika user input URL: https://gist.github.com/user/123abc... -> Ambil 123abc...
+            // Jika user input ID: 123abc... -> Tetap ambil 123abc...
+            const gistId = gistInput.split('/').pop();
 
             localStorage.setItem('app_secret', key);
             localStorage.setItem('gh_token', token);
-            localStorage.setItem('gh_gist', gist);
+            localStorage.setItem('gh_gist', gistId); // Simpan ID bersihnya saja
+            
             toggleSettings();
-            alert("Konfigurasi Tersimpan!");
+            alert("Konfigurasi Tersimpan! ID Gist: " + gistId);
+            loadClients(); // Refresh list untuk memastikan koneksi
         }
 
         function generate() {
@@ -171,7 +183,8 @@
         async function toggleBan(id, action, btn) {
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
-            if(!token || !gistId) return alert("Setting GitHub Token dulu!");
+            
+            if(!token || !gistId) return alert("Setting GitHub Token & Gist ID dulu!");
 
             const originalHtml = btn.innerHTML;
             btn.innerHTML = '<span class="loader"></span>';
@@ -179,7 +192,7 @@
 
             try {
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, { headers: { Authorization: `token ${token}` } });
-                if(!res.ok) throw new Error("Gagal akses GitHub");
+                if(!res.ok) throw new Error("Gagal akses GitHub. Cek Token/ID Gist.");
                 const data = await res.json();
                 let blacklist = JSON.parse(data.files['blacklist.json'].content || '[]');
 

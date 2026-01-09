@@ -8,13 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        body{font-family:'Plus Jakarta Sans',sans-serif;background-color:#f8fafc}
-        .loader{border:2px solid #e2e8f0;border-top:2px solid #4f46e5;border-radius:50%;width:14px;height:14px;animation:spin 1s linear infinite;display:inline-block}
-        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-        .animate-fade { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+    <style>body{font-family:'Plus Jakarta Sans',sans-serif;background-color:#f8fafc}.loader{border:2px solid #e2e8f0;border-top:2px solid #4f46e5;border-radius:50%;width:14px;height:14px;animation:spin 1s linear infinite;display:inline-block}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}.animate-fade{animation:fadeIn 0.3s ease-in-out}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}</style>
 </head>
 <body class="pb-24 text-slate-800 bg-slate-50">
 
@@ -27,10 +21,10 @@
                 <div>
                     <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Secret Key (App Password)</label>
                     <div class="relative mt-1">
-                        <input id="inKey" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition" placeholder="RAHASIA_DAPUR_123">
+                        <input id="inKey" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500" placeholder="RAHASIA_DAPUR_123">
                         <i class="fa-solid fa-key absolute right-3 top-3.5 text-slate-400 text-xs"></i>
                     </div>
-                    <p class="text-[9px] text-rose-500 mt-1">*Wajib sama persis dengan di App.jsx</p>
+                    <p class="text-[9px] text-rose-500 mt-1">*Wajib sama persis dengan App.jsx</p>
                 </div>
                 
                 <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
@@ -110,7 +104,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             loadClients();
-            // Default check dengan nilai default
             const hasToken = localStorage.getItem('gh_token');
             if(!hasToken) {
                 setTimeout(() => toggleSettings(), 500);
@@ -121,7 +114,7 @@
             const modal = document.getElementById('settingsModal');
             modal.classList.toggle('hidden');
             if(!modal.classList.contains('hidden')) {
-                // FORCE DEFAULT KEY 'RAHASIA_DAPUR_123' JIKA KOSONG
+                // PERBAIKAN: Jika kosong, gunakan default agar sinkron dengan App.jsx
                 document.getElementById('inKey').value = localStorage.getItem('app_secret') || 'RAHASIA_DAPUR_123';
                 document.getElementById('inToken').value = localStorage.getItem('gh_token') || '';
                 document.getElementById('inGist').value = localStorage.getItem('gh_gist') || '';
@@ -149,7 +142,7 @@
         }
 
         function generate() {
-            // GUNAKAN KEY YANG SUDAH DISIMPAN ATAU DEFAULT
+            // PERBAIKAN: Ambil Secret Key, fallback ke default jika null
             const secretKey = localStorage.getItem('app_secret') || 'RAHASIA_DAPUR_123';
             
             const name = document.getElementById('tenantName').value;
@@ -203,6 +196,7 @@
                 
                 const bgClass = isBanned ? 'bg-slate-50 border-rose-200 ring-1 ring-rose-100' : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-md';
 
+                // PERBAIKAN: Tombol COPY DIKEMBALIKAN
                 const html = `
                 <div class="p-4 rounded-2xl shadow-sm border ${bgClass} transition-all duration-300 group">
                     <div class="flex justify-between items-start mb-3">
@@ -217,14 +211,14 @@
                             <span class="text-[9px] font-bold text-slate-400 w-8">ID</span>
                             <div class="flex-1 flex gap-1 bg-white border border-slate-200 rounded-lg p-1">
                                 <input readonly value="${c.id}" class="flex-1 bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full cursor-pointer" onclick="this.select()">
-                                <button onclick="copyText('${c.id}')" class="text-slate-400 hover:text-indigo-600 px-2"><i class="fa-regular fa-copy"></i></button>
+                                <button onclick="copyText('${c.id}')" class="text-slate-400 hover:text-indigo-600 px-1"><i class="fa-regular fa-copy"></i></button>
                             </div>
                         </div>
                         <div class="flex gap-2 items-center">
                             <span class="text-[9px] font-bold text-slate-400 w-8">KEY</span>
                             <div class="flex-1 flex gap-1 bg-white border border-slate-200 rounded-lg p-1">
                                 <input readonly value="${c.token}" class="flex-1 bg-transparent text-[10px] font-mono text-slate-400 outline-none w-full cursor-pointer truncate" onclick="this.select()">
-                                <button onclick="copyText('${c.token}')" class="text-slate-400 hover:text-indigo-600 px-2"><i class="fa-regular fa-copy"></i></button>
+                                <button onclick="copyText('${c.token}')" class="text-slate-400 hover:text-indigo-600 px-1"><i class="fa-regular fa-copy"></i></button>
                             </div>
                         </div>
                     </div>
@@ -243,8 +237,7 @@
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
 
-            // Hapus Lokal Dulu
-            localDelete(id);
+            localDelete(id); // Hapus lokal dulu
 
             if(!token || !gistId) {
                 alert("Token/Gist ID belum disetting. Data hanya dihapus dari HP ini.");
@@ -288,13 +281,13 @@
             loadClients();
         }
 
+        // PERBAIKAN: Fungsi copy dikembalikan
         function copyText(text) {
             navigator.clipboard.writeText(text);
-            // Visual feedback simple
             const el = document.activeElement;
-            const originalHTML = el.innerHTML;
+            const oriHtml = el.innerHTML;
             el.innerHTML = '<i class="fa-solid fa-check text-emerald-500"></i>';
-            setTimeout(() => el.innerHTML = originalHTML, 1000);
+            setTimeout(() => el.innerHTML = oriHtml, 1000);
         }
 
         async function toggleBan(id, action, btn) {

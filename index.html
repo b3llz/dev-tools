@@ -8,7 +8,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>body{font-family:'Plus Jakarta Sans',sans-serif;background-color:#f8fafc}.loader{border:2px solid #e2e8f0;border-top:2px solid #4f46e5;border-radius:50%;width:14px;height:14px;animation:spin 1s linear infinite;display:inline-block}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}.animate-fade{animation:fadeIn 0.3s ease-in-out}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}</style>
+    <style>
+        body{font-family:'Plus Jakarta Sans',sans-serif;background-color:#f8fafc}
+        .loader{border:2px solid #e2e8f0;border-top:2px solid #4f46e5;border-radius:50%;width:14px;height:14px;animation:spin 1s linear infinite;display:inline-block}
+        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+        .animate-fade{animation:fadeIn 0.3s ease-in-out}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        
+        /* ANIMASI POPUP MAHAL */
+        .toast-enter { animation: toastIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .toast-exit { animation: toastOut 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes toastIn { 
+            from { opacity: 0; transform: translate(-50%, 20px) scale(0.9); } 
+            to { opacity: 1; transform: translate(-50%, 0) scale(1); } 
+        }
+        @keyframes toastOut { 
+            from { opacity: 1; transform: translate(-50%, 0) scale(1); } 
+            to { opacity: 0; transform: translate(-50%, 20px) scale(0.9); } 
+        }
+    </style>
 </head>
 <body class="pb-24 text-slate-800 bg-slate-50">
 
@@ -21,7 +39,7 @@
                 <div>
                     <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Secret Key (App Password)</label>
                     <div class="relative mt-1">
-                        <input id="inKey" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500" placeholder="RAHASIA_DAPUR_123">
+                        <input id="inKey" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition" placeholder="RAHASIA_DAPUR_123">
                         <i class="fa-solid fa-key absolute right-3 top-3.5 text-slate-400 text-xs"></i>
                     </div>
                     <p class="text-[9px] text-rose-500 mt-1">*Wajib sama persis dengan App.jsx</p>
@@ -114,7 +132,6 @@
             const modal = document.getElementById('settingsModal');
             modal.classList.toggle('hidden');
             if(!modal.classList.contains('hidden')) {
-                // PERBAIKAN: Jika kosong, gunakan default agar sinkron dengan App.jsx
                 document.getElementById('inKey').value = localStorage.getItem('app_secret') || 'RAHASIA_DAPUR_123';
                 document.getElementById('inToken').value = localStorage.getItem('gh_token') || '';
                 document.getElementById('inGist').value = localStorage.getItem('gh_gist') || '';
@@ -142,9 +159,7 @@
         }
 
         function generate() {
-            // PERBAIKAN: Ambil Secret Key, fallback ke default jika null
             const secretKey = localStorage.getItem('app_secret') || 'RAHASIA_DAPUR_123';
-            
             const name = document.getElementById('tenantName').value;
             const val = parseInt(document.getElementById('durationVal').value);
             const unit = document.getElementById('durationUnit').value;
@@ -160,7 +175,6 @@
             const data = { id, tenant: name, validUntil: date.toISOString() };
             
             try {
-                // Enkripsi
                 const token = CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
                 const newClient = { ...data, token, status: 'active', createdAt: new Date().toISOString() };
                 
@@ -170,7 +184,7 @@
                 
                 loadClients();
                 document.getElementById('tenantName').value = '';
-                alert("Lisensi Berhasil Dibuat!");
+                showToast("Lisensi Berhasil Dibuat!");
             } catch (e) { alert("Gagal membuat lisensi: " + e.message); }
         }
 
@@ -196,7 +210,6 @@
                 
                 const bgClass = isBanned ? 'bg-slate-50 border-rose-200 ring-1 ring-rose-100' : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-md';
 
-                // PERBAIKAN: Tombol COPY DIKEMBALIKAN
                 const html = `
                 <div class="p-4 rounded-2xl shadow-sm border ${bgClass} transition-all duration-300 group">
                     <div class="flex justify-between items-start mb-3">
@@ -211,14 +224,14 @@
                             <span class="text-[9px] font-bold text-slate-400 w-8">ID</span>
                             <div class="flex-1 flex gap-1 bg-white border border-slate-200 rounded-lg p-1">
                                 <input readonly value="${c.id}" class="flex-1 bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full cursor-pointer" onclick="this.select()">
-                                <button onclick="copyText('${c.id}')" class="text-slate-400 hover:text-indigo-600 px-1"><i class="fa-regular fa-copy"></i></button>
+                                <button onclick="copyText('${c.id}', 'ID Client')" class="text-slate-400 hover:text-indigo-600 px-1 transition"><i class="fa-regular fa-copy"></i></button>
                             </div>
                         </div>
                         <div class="flex gap-2 items-center">
                             <span class="text-[9px] font-bold text-slate-400 w-8">KEY</span>
                             <div class="flex-1 flex gap-1 bg-white border border-slate-200 rounded-lg p-1">
                                 <input readonly value="${c.token}" class="flex-1 bg-transparent text-[10px] font-mono text-slate-400 outline-none w-full cursor-pointer truncate" onclick="this.select()">
-                                <button onclick="copyText('${c.token}')" class="text-slate-400 hover:text-indigo-600 px-1"><i class="fa-regular fa-copy"></i></button>
+                                <button onclick="copyText('${c.token}', 'Kode Lisensi')" class="text-slate-400 hover:text-indigo-600 px-1 transition"><i class="fa-regular fa-copy"></i></button>
                             </div>
                         </div>
                     </div>
@@ -231,13 +244,46 @@
             });
         }
 
+        // --- FUNGSI COPY PREMIUM DENGAN ANIMASI FADE IN ---
+        function copyText(text, label = 'Teks') {
+            navigator.clipboard.writeText(text);
+            showToast(`${label} berhasil disalin!`);
+        }
+
+        // --- TOAST NOTIFICATION HANDLER ---
+        function showToast(message) {
+            // Hapus toast lama jika ada
+            const existingToast = document.getElementById('toast-notif');
+            if(existingToast) existingToast.remove();
+
+            // Buat Element Baru
+            const toast = document.createElement('div');
+            toast.id = 'toast-notif';
+            toast.className = 'fixed bottom-10 left-1/2 z-[100] flex items-center gap-3 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl shadow-slate-900/30 border border-white/10 toast-enter';
+            toast.innerHTML = `
+                <div class="bg-emerald-500 rounded-full p-1 text-slate-900"><i class="fa-solid fa-check text-[10px]"></i></div>
+                <span class="text-sm font-bold tracking-wide">${message}</span>
+            `;
+
+            document.body.appendChild(toast);
+
+            // Hilangkan setelah 2 detik
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => {
+                    if(toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 500); // Waktu animasi exit
+            }, 2000);
+        }
+
         async function del(id) {
             if(!confirm("PERINGATAN KERAS:\n\nTindakan ini akan:\n1. Memblokir ID ini di Server (Gist) selamanya.\n2. Menghapus data dari Admin Panel.\n\nClient tidak akan bisa login lagi. Lanjutkan?")) return;
 
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
 
-            localDelete(id); // Hapus lokal dulu
+            localDelete(id);
 
             if(!token || !gistId) {
                 alert("Token/Gist ID belum disetting. Data hanya dihapus dari HP ini.");
@@ -266,7 +312,7 @@
                             body: JSON.stringify({ files: { [targetFileName]: { content: JSON.stringify(blacklist) } } })
                         });
                     }
-                    alert("SUKSES: Client diblokir dari server dan dihapus.");
+                    showToast("Client diblokir & dihapus.");
                 }
             } catch(e) {
                 console.log("Gagal update gist:", e);
@@ -279,15 +325,6 @@
             const newData = db.filter(c => c.id !== id);
             localStorage.setItem('clients', JSON.stringify(newData));
             loadClients();
-        }
-
-        // PERBAIKAN: Fungsi copy dikembalikan
-        function copyText(text) {
-            navigator.clipboard.writeText(text);
-            const el = document.activeElement;
-            const oriHtml = el.innerHTML;
-            el.innerHTML = '<i class="fa-solid fa-check text-emerald-500"></i>';
-            setTimeout(() => el.innerHTML = oriHtml, 1000);
         }
 
         async function toggleBan(id, action, btn) {
@@ -337,7 +374,7 @@
                 }
                 
                 loadClients();
-                alert(action === 'ban' ? "SUKSES: Client Diblokir" : "SUKSES: Akses Dibuka");
+                showToast(action === 'ban' ? "Client BERHASIL DIBLOKIR" : "Akses Client DIBUKA");
 
             } catch(e) {
                 alert("ERROR: " + e.message); 

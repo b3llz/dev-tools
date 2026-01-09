@@ -15,17 +15,11 @@
         .animate-fade{animation:fadeIn 0.3s ease-in-out}
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         
-        /* ANIMASI POPUP MAHAL */
+        /* TOAST ANIMATION */
         .toast-enter { animation: toastIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .toast-exit { animation: toastOut 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes toastIn { 
-            from { opacity: 0; transform: translate(-50%, 20px) scale(0.9); } 
-            to { opacity: 1; transform: translate(-50%, 0) scale(1); } 
-        }
-        @keyframes toastOut { 
-            from { opacity: 1; transform: translate(-50%, 0) scale(1); } 
-            to { opacity: 0; transform: translate(-50%, 20px) scale(0.9); } 
-        }
+        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 20px) scale(0.9); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+        @keyframes toastOut { from { opacity: 1; transform: translate(-50%, 0) scale(1); } to { opacity: 0; transform: translate(-50%, 20px) scale(0.9); } }
     </style>
 </head>
 <body class="pb-24 text-slate-800 bg-slate-50">
@@ -39,7 +33,7 @@
                 <div>
                     <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Secret Key (App Password)</label>
                     <div class="relative mt-1">
-                        <input id="inKey" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition" placeholder="RAHASIA_DAPUR_123">
+                        <input id="inKey" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500" placeholder="RAHASIA_DAPUR_123">
                         <i class="fa-solid fa-key absolute right-3 top-3.5 text-slate-400 text-xs"></i>
                     </div>
                     <p class="text-[9px] text-rose-500 mt-1">*Wajib sama persis dengan App.jsx</p>
@@ -123,9 +117,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadClients();
             const hasToken = localStorage.getItem('gh_token');
-            if(!hasToken) {
-                setTimeout(() => toggleSettings(), 500);
-            }
+            if(!hasToken) setTimeout(() => toggleSettings(), 500);
         });
 
         function toggleSettings() {
@@ -244,53 +236,44 @@
             });
         }
 
-        // --- FUNGSI COPY PREMIUM DENGAN ANIMASI FADE IN ---
         function copyText(text, label = 'Teks') {
             navigator.clipboard.writeText(text);
             showToast(`${label} berhasil disalin!`);
         }
 
-        // --- TOAST NOTIFICATION HANDLER ---
         function showToast(message) {
-            // Hapus toast lama jika ada
             const existingToast = document.getElementById('toast-notif');
             if(existingToast) existingToast.remove();
 
-            // Buat Element Baru
             const toast = document.createElement('div');
             toast.id = 'toast-notif';
             toast.className = 'fixed bottom-10 left-1/2 z-[100] flex items-center gap-3 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl shadow-slate-900/30 border border-white/10 toast-enter';
-            toast.innerHTML = `
-                <div class="bg-emerald-500 rounded-full p-1 text-slate-900"><i class="fa-solid fa-check text-[10px]"></i></div>
-                <span class="text-sm font-bold tracking-wide">${message}</span>
-            `;
-
+            toast.innerHTML = `<div class="bg-emerald-500 rounded-full p-1 text-slate-900"><i class="fa-solid fa-check text-[10px]"></i></div><span class="text-sm font-bold tracking-wide">${message}</span>`;
             document.body.appendChild(toast);
 
-            // Hilangkan setelah 2 detik
             setTimeout(() => {
                 toast.classList.remove('toast-enter');
                 toast.classList.add('toast-exit');
-                setTimeout(() => {
-                    if(toast.parentNode) toast.parentNode.removeChild(toast);
-                }, 500); // Waktu animasi exit
+                setTimeout(() => { if(toast.parentNode) toast.parentNode.removeChild(toast); }, 500);
             }, 2000);
         }
 
+        // --- FUNGSI HAPUS: SEKALIGUS BLOKIR ONLINE ---
         async function del(id) {
-            if(!confirm("PERINGATAN KERAS:\n\nTindakan ini akan:\n1. Memblokir ID ini di Server (Gist) selamanya.\n2. Menghapus data dari Admin Panel.\n\nClient tidak akan bisa login lagi. Lanjutkan?")) return;
+            if(!confirm("PERINGATAN KERAS:\n\nTindakan ini akan:\n1. Memblokir ID ini di Server (Gist) selamanya.\n2. Menghapus data dari Admin Panel.\n\nLanjutkan?")) return;
 
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
 
-            localDelete(id);
-
+            // Jika config belum lengkap, cuma hapus lokal
             if(!token || !gistId) {
-                alert("Token/Gist ID belum disetting. Data hanya dihapus dari HP ini.");
+                alert("Token/Gist belum disetting. Data hanya dihapus di HP ini (Client masih bisa login).");
+                localDelete(id);
                 return;
             }
 
             try {
+                // 1. Ambil data Gist terbaru
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, {
                     headers: { Authorization: `token ${token}` }
                 });
@@ -304,6 +287,7 @@
                     let blacklist = [];
                     try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
 
+                    // 2. Tambahkan ID ke blacklist (jika belum ada)
                     if(!blacklist.includes(id)) {
                         blacklist.push(id);
                         await fetch(`https://api.github.com/gists/${gistId}`, {
@@ -312,11 +296,15 @@
                             body: JSON.stringify({ files: { [targetFileName]: { content: JSON.stringify(blacklist) } } })
                         });
                     }
-                    showToast("Client diblokir & dihapus.");
+                    
+                    // 3. Hapus lokal setelah sukses blokir online
+                    localDelete(id);
+                    showToast("Client DIBLOKIR & DIHAPUS Permanen.");
+                } else {
+                    throw new Error("Gagal koneksi ke GitHub");
                 }
             } catch(e) {
-                console.log("Gagal update gist:", e);
-                alert("Client dihapus lokal, tapi gagal update server.");
+                alert("Gagal memblokir online: " + e.message + "\nData tidak dihapus agar Anda bisa mencoba lagi.");
             }
         }
 

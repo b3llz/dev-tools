@@ -27,9 +27,10 @@
                 <div>
                     <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Secret Key (App Password)</label>
                     <div class="relative mt-1">
-                        <input id="inKey" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition" placeholder="Wajib sama dengan App.jsx">
+                        <input id="inKey" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition" placeholder="Samakan dengan App.jsx">
                         <i class="fa-solid fa-key absolute right-3 top-3.5 text-slate-400 text-xs"></i>
                     </div>
+                    <p class="text-[9px] text-rose-500 mt-1">*Jika beda dengan App.jsx, lisensi akan error (Malformed UTF-8).</p>
                 </div>
                 
                 <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
@@ -109,7 +110,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             loadClients();
-            if(!localStorage.getItem('gh_token') || !localStorage.getItem('app_secret')) {
+            // Default check dengan nilai default
+            const hasToken = localStorage.getItem('gh_token');
+            // Jika tidak ada token, buka setting
+            if(!hasToken) {
                 setTimeout(() => toggleSettings(), 500);
             }
         });
@@ -118,7 +122,8 @@
             const modal = document.getElementById('settingsModal');
             modal.classList.toggle('hidden');
             if(!modal.classList.contains('hidden')) {
-                document.getElementById('inKey').value = localStorage.getItem('app_secret') || '';
+                // PERBAIKAN: Jika Secret Key kosong, isi dengan DEFAULT KEY: RAHASIA_DAPUR_123
+                document.getElementById('inKey').value = localStorage.getItem('app_secret') || 'RAHASIA_DAPUR_123';
                 document.getElementById('inToken').value = localStorage.getItem('gh_token') || '';
                 document.getElementById('inGist').value = localStorage.getItem('gh_gist') || '';
             }
@@ -145,9 +150,9 @@
         }
 
         function generate() {
-            const secretKey = localStorage.getItem('app_secret');
-            if(!secretKey) return alert("Secret Key belum disetting!");
-
+            // PERBAIKAN: Ambil Secret Key, jika tidak ada gunakan DEFAULT
+            const secretKey = localStorage.getItem('app_secret') || 'RAHASIA_DAPUR_123';
+            
             const name = document.getElementById('tenantName').value;
             const val = parseInt(document.getElementById('durationVal').value);
             const unit = document.getElementById('durationUnit').value;
@@ -163,6 +168,7 @@
             const data = { id, tenant: name, validUntil: date.toISOString() };
             
             try {
+                // Enkripsi menggunakan Secret Key yang sudah dipastikan ada
                 const token = CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
                 const newClient = { ...data, token, status: 'active', createdAt: new Date().toISOString() };
                 
@@ -230,69 +236,57 @@
             });
         }
 
-                // --- FUNGSI HAPUS PERMANEN (AUTO-BAN & DELETE) ---
         async function del(id) {
             if(!confirm("PERINGATAN KERAS:\n\nTindakan ini akan:\n1. Memblokir ID ini di Server (Gist) selamanya.\n2. Menghapus data dari Admin Panel.\n\nClient tidak akan bisa login lagi. Lanjutkan?")) {
                 return;
             }
 
-            // Tampilkan Loading
-            const originalText = document.body.innerHTML;
-            // (Opsional: Kita biarkan UI tetap jalan, tapi tampilkan alert proses)
-            
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
 
+            // Hapus Lokal Dulu
+            localDelete(id);
+
             if(!token || !gistId) {
-                alert("Gagal: Token/Gist ID belum disetting. Data hanya dihapus dari HP ini.");
-                localDelete(id);
+                alert("Token/Gist ID belum disetting. Data hanya dihapus dari HP ini.");
                 return;
             }
 
             try {
-                // 1. AMBIL DATA GIST TERBARU
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, {
                     headers: { Authorization: `token ${token}` }
                 });
-                if(!res.ok) throw new Error("Gagal koneksi ke GitHub.");
                 
-                const data = await res.json();
-                const fileNames = Object.keys(data.files);
-                const targetFileName = fileNames.find(f => f.includes('json')) || fileNames[0]; // Auto-detect blocklist.json
+                if(res.ok) {
+                    const data = await res.json();
+                    const fileNames = Object.keys(data.files);
+                    const targetFileName = fileNames.find(f => f.includes('json')) || fileNames[0];
 
-                // 2. MASUKKAN ID KE BLACKLIST (JIKA BELUM ADA)
-                let content = data.files[targetFileName].content || '[]';
-                let blacklist = [];
-                try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
+                    let content = data.files[targetFileName].content || '[]';
+                    let blacklist = [];
+                    try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
 
-                if(!blacklist.includes(id)) {
-                    blacklist.push(id);
-                    
-                    // 3. UPLOAD KE GITHUB
-                    await fetch(`https://api.github.com/gists/${gistId}`, {
-                        method: 'PATCH',
-                        headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ files: { [targetFileName]: { content: JSON.stringify(blacklist) } } })
-                    });
+                    if(!blacklist.includes(id)) {
+                        blacklist.push(id);
+                        await fetch(`https://api.github.com/gists/${gistId}`, {
+                            method: 'PATCH',
+                            headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ files: { [targetFileName]: { content: JSON.stringify(blacklist) } } })
+                        });
+                    }
+                    alert("SUKSES: Client diblokir dari server dan dihapus.");
                 }
-
-                // 4. JIKA SUKSES, BARU HAPUS DARI HP ADMIN
-                localDelete(id);
-                alert("SUKSES: Data Client telah dimusnahkan. Akses dicabut permanen.");
-
             } catch(e) {
-                alert("Error saat memblokir online: " + e.message + "\n\nData belum dihapus dari Admin agar Anda bisa mencoba lagi.");
+                console.log("Gagal update gist:", e);
+                alert("Client dihapus lokal, tapi gagal update server.");
             }
         }
 
-        // Fungsi kecil untuk hapus local storage
         function localDelete(id) {
             let db = JSON.parse(localStorage.getItem('clients') || '[]');
             const newData = db.filter(c => c.id !== id);
             localStorage.setItem('clients', JSON.stringify(newData));
             loadClients();
-            }
-
         }
 
         async function toggleBan(id, action, btn) {
@@ -306,7 +300,6 @@
             btn.disabled = true;
 
             try {
-                // 1. Fetch
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, {
                     headers: { Authorization: `token ${token}` }
                 });
@@ -314,13 +307,11 @@
                 if(!res.ok) throw new Error(`Gagal koneksi (Error: ${res.status}). Cek Token.`);
                 const data = await res.json();
                 
-                // 2. Smart Detect (Cari file .json)
                 const fileNames = Object.keys(data.files);
                 const targetFileName = fileNames.find(f => f === 'blocklist.json') || fileNames[0];
 
                 if(!targetFileName) throw new Error("Gist kosong!");
 
-                // 3. Update
                 let content = data.files[targetFileName].content || '[]';
                 let blacklist = [];
                 try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
@@ -331,14 +322,12 @@
                     blacklist = blacklist.filter(x => x !== id);
                 }
 
-                // 4. Push
                 await fetch(`https://api.github.com/gists/${gistId}`, {
                     method: 'PATCH',
                     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ files: { [targetFileName]: { content: JSON.stringify(blacklist) } } })
                 });
 
-                // 5. Update Local
                 let db = JSON.parse(localStorage.getItem('clients') || '[]');
                 const idx = db.findIndex(c => c.id === id);
                 if(idx !== -1) {

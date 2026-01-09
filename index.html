@@ -315,7 +315,7 @@
             loadClients();
         }
 
-        async function toggleBan(id, action, btn) {
+                async function toggleBan(id, action, btn) {
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
             
@@ -326,6 +326,7 @@
             btn.disabled = true;
 
             try {
+                // 1. AMBIL DATA GIST
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, {
                     headers: { Authorization: `token ${token}` }
                 });
@@ -333,27 +334,35 @@
                 if(!res.ok) throw new Error(`Gagal koneksi (Error: ${res.status}). Cek Token.`);
                 const data = await res.json();
                 
+                // --- PERBAIKAN DISINI ---
+                // Menggunakan logika yang sama dengan fungsi del() (mencari file .json apapun)
+                // Sebelumnya: f === 'blocklist.json' (terlalu kaku)
                 const fileNames = Object.keys(data.files);
-                const targetFileName = fileNames.find(f => f === 'blocklist.json') || fileNames[0];
+                const targetFileName = fileNames.find(f => f.includes('json')) || fileNames[0];
 
-                if(!targetFileName) throw new Error("Gist kosong!");
+                if(!targetFileName) throw new Error("Gist tidak memiliki file JSON!");
 
+                // 2. PROSES UPDATE DATA
                 let content = data.files[targetFileName].content || '[]';
                 let blacklist = [];
                 try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
 
                 if(action === 'ban') {
+                    // Masukkan ID jika belum ada
                     if(!blacklist.includes(id)) blacklist.push(id);
                 } else {
+                    // Hapus ID dari blacklist (Unban)
                     blacklist = blacklist.filter(x => x !== id);
                 }
 
+                // 3. KIRIM BALIK KE GITHUB (PATCH)
                 await fetch(`https://api.github.com/gists/${gistId}`, {
                     method: 'PATCH',
                     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ files: { [targetFileName]: { content: JSON.stringify(blacklist) } } })
                 });
 
+                // 4. UPDATE STATUS DI LOKAL ADMIN PANEL
                 let db = JSON.parse(localStorage.getItem('clients') || '[]');
                 const idx = db.findIndex(c => c.id === id);
                 if(idx !== -1) {
@@ -362,7 +371,7 @@
                 }
                 
                 loadClients();
-                showToast(action === 'ban' ? "Client BERHASIL DIBLOKIR" : "Akses Client DIBUKA");
+                showToast(action === 'ban' ? "Client BERHASIL DIBLOKIR (Server & Lokal)" : "Akses Client DIBUKA");
 
             } catch(e) {
                 alert("ERROR: " + e.message); 
@@ -371,6 +380,7 @@
                 btn.disabled = false;
             }
         }
+
     </script>
 </body>
 </html>

@@ -39,13 +39,21 @@
                     <p class="text-[9px] text-rose-500 mt-1">*Wajib sama persis dengan App.jsx</p>
                 </div>
                 
+                <div>
+                    <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Google Script URL (Monitoring)</label>
+                    <div class="relative mt-1">
+                        <input id="inLogUrl" type="text" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-indigo-500" placeholder="https://script.google.com/...">
+                        <i class="fa-solid fa-link absolute right-3 top-3.5 text-slate-400 text-xs"></i>
+                    </div>
+                </div>
+
                 <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
                     <div>
                         <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">GitHub Token (PAT)</label>
                         <input id="inToken" type="password" class="w-full bg-white border border-slate-200 p-2.5 rounded-lg text-sm font-mono outline-none focus:border-indigo-500 mt-1" placeholder="ghp_xxxxxxxxxxxx">
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">ID Gist (Kode Acak)</label>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">ID Gist (Blocklist)</label>
                         <input id="inGist" type="text" class="w-full bg-white border border-slate-200 p-2.5 rounded-lg text-sm font-mono outline-none focus:border-indigo-500 mt-1" placeholder="Contoh: 07d95837ff...">
                     </div>
                 </div>
@@ -68,49 +76,92 @@
                 <p class="text-[10px] font-bold text-slate-400">License Manager</p>
             </div>
         </div>
-        <button type="button" onclick="toggleSettings()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition flex items-center justify-center border border-transparent hover:border-indigo-100">
-            <i class="fa-solid fa-gear"></i>
-        </button>
+        <div class="flex items-center gap-2">
+            <div class="flex bg-slate-100 p-1 rounded-lg">
+                <button onclick="switchTab('license')" id="btn-license" class="px-3 py-1.5 rounded-md text-[10px] font-bold bg-white shadow-sm text-indigo-600 transition">Lisensi</button>
+                <button onclick="switchTab('monitor')" id="btn-monitor" class="px-3 py-1.5 rounded-md text-[10px] font-bold text-slate-500 hover:bg-slate-200 transition">Monitor</button>
+            </div>
+            <button type="button" onclick="toggleSettings()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition flex items-center justify-center border border-transparent hover:border-indigo-100">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
     </nav>
 
     <div class="max-w-md mx-auto pt-24 px-4 space-y-6 animate-fade">
         
-        <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden group">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-2xl -mr-8 -mt-8 transition group-hover:bg-indigo-100"></div>
-            <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2 relative z-10">
-                <i class="fa-solid fa-plus-circle text-indigo-500"></i> Buat Lisensi Baru
-            </h2>
-            <div class="space-y-4 relative z-10">
-                <div>
-                    <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Nama Client / Toko</label>
-                    <input id="tenantName" type="text" placeholder="Contoh: Kopi Senja" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition mt-1">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Masa Aktif</label>
-                    <div class="flex gap-3 mt-1">
-                        <input id="durationVal" type="number" value="1" class="w-20 text-center bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition">
-                        <select id="durationUnit" class="flex-1 bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-500 cursor-pointer appearance-none focus:ring-2 focus:ring-indigo-200 transition">
-                            <option value="month">Bulan</option>
-                            <option value="year">Tahun</option>
-                            <option value="day">Hari</option>
+        <div id="view-license">
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden group mb-6">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-2xl -mr-8 -mt-8 transition group-hover:bg-indigo-100"></div>
+                <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2 relative z-10">
+                    <i class="fa-solid fa-plus-circle text-indigo-500"></i> Buat Lisensi Baru
+                </h2>
+                <div class="space-y-4 relative z-10">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Nama Client / Toko</label>
+                        <input id="tenantName" type="text" placeholder="Contoh: Kopi Senja" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Tipe Lisensi</label>
+                        <select id="licType" class="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition mt-1 text-indigo-600">
+                            <option value="BASIC">BASIC (Standard)</option>
+                            <option value="PRO">PRO (Premium Features)</option>
                         </select>
                     </div>
+
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 ml-1">Masa Aktif</label>
+                        <div class="flex gap-3 mt-1">
+                            <input id="durationVal" type="number" value="1" class="w-20 text-center bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition">
+                            <select id="durationUnit" class="flex-1 bg-slate-50 border border-slate-200 p-3.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-500 cursor-pointer appearance-none focus:ring-2 focus:ring-indigo-200 transition">
+                                <option value="month">Bulan</option>
+                                <option value="year">Tahun</option>
+                                <option value="day">Hari</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" onclick="generate()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-[0.98] transition flex items-center justify-center gap-2 mt-2">
+                        <i class="fa-solid fa-bolt text-yellow-400"></i> GENERATE KEY
+                    </button>
                 </div>
-                <button type="button" onclick="generate()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-[0.98] transition flex items-center justify-center gap-2 mt-2">
-                    <i class="fa-solid fa-bolt text-yellow-400"></i> GENERATE KEY
-                </button>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center px-1 mb-3">
+                    <h3 class="font-bold text-slate-400 text-xs uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-users"></i> Daftar Client
+                    </h3>
+                    <button type="button" onclick="loadClients()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold bg-indigo-50 px-3 py-1 rounded-full transition">Refresh Data</button>
+                </div>
+                <div id="clientList" class="space-y-3 pb-10"></div>
             </div>
         </div>
 
-        <div>
-            <div class="flex justify-between items-center px-1 mb-3">
-                <h3 class="font-bold text-slate-400 text-xs uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-users"></i> Daftar Client
-                </h3>
-                <button type="button" onclick="loadClients()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold bg-indigo-50 px-3 py-1 rounded-full transition">Refresh Data</button>
+        <div id="view-monitor" class="hidden">
+            <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+                <div class="flex justify-between items-center mb-5">
+                    <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-satellite-dish text-indigo-500"></i> Live Monitor
+                    </h2>
+                    <button onclick="fetchLogs()" class="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full hover:bg-indigo-100 transition">Refresh</button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-100">
+                            <tr>
+                                <th class="p-3">Waktu</th>
+                                <th class="p-3">User</th>
+                                <th class="p-3">Info Device</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTable" class="text-xs">
+                            <tr><td colspan="3" class="p-6 text-center text-slate-400 italic">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div id="clientList" class="space-y-3 pb-10"></div>
         </div>
+
     </div>
 
     <script>
@@ -120,6 +171,27 @@
             if(!hasToken) setTimeout(() => toggleSettings(), 500);
         });
 
+        // --- TAB SWITCHER LOGIC ---
+        function switchTab(tab) {
+            const vLic = document.getElementById('view-license');
+            const vMon = document.getElementById('view-monitor');
+            const bLic = document.getElementById('btn-license');
+            const bMon = document.getElementById('btn-monitor');
+
+            if(tab === 'license') {
+                vLic.classList.remove('hidden');
+                vMon.classList.add('hidden');
+                bLic.className = "px-3 py-1.5 rounded-md text-[10px] font-bold bg-white shadow-sm text-indigo-600 transition";
+                bMon.className = "px-3 py-1.5 rounded-md text-[10px] font-bold text-slate-500 hover:bg-slate-200 transition";
+            } else {
+                vLic.classList.add('hidden');
+                vMon.classList.remove('hidden');
+                bMon.className = "px-3 py-1.5 rounded-md text-[10px] font-bold bg-white shadow-sm text-indigo-600 transition";
+                bLic.className = "px-3 py-1.5 rounded-md text-[10px] font-bold text-slate-500 hover:bg-slate-200 transition";
+                fetchLogs(); // Auto fetch saat buka tab monitor
+            }
+        }
+
         function toggleSettings() {
             const modal = document.getElementById('settingsModal');
             modal.classList.toggle('hidden');
@@ -127,16 +199,17 @@
                 document.getElementById('inKey').value = localStorage.getItem('app_secret') || 'RAHASIA_DAPUR_123';
                 document.getElementById('inToken').value = localStorage.getItem('gh_token') || '';
                 document.getElementById('inGist').value = localStorage.getItem('gh_gist') || '';
+                document.getElementById('inLogUrl').value = localStorage.getItem('app_log_url') || '';
             }
         }
 
         function saveConfig() {
             const key = document.getElementById('inKey').value.trim();
             const token = document.getElementById('inToken').value.trim();
+            const logUrl = document.getElementById('inLogUrl').value.trim();
             let gistInput = document.getElementById('inGist').value.trim();
 
             if(!key || !token || !gistInput) return alert("Harap isi semua kolom konfigurasi!");
-
             if(gistInput.includes('/')) {
                 if(gistInput.endsWith('/')) gistInput = gistInput.slice(0, -1);
                 gistInput = gistInput.split('/').pop();
@@ -145,6 +218,7 @@
             localStorage.setItem('app_secret', key);
             localStorage.setItem('gh_token', token);
             localStorage.setItem('gh_gist', gistInput);
+            localStorage.setItem('app_log_url', logUrl);
             
             toggleSettings();
             loadClients();
@@ -153,19 +227,19 @@
         function generate() {
             const secretKey = localStorage.getItem('app_secret') || 'RAHASIA_DAPUR_123';
             const name = document.getElementById('tenantName').value;
+            const type = document.getElementById('licType').value; // Ambil Tipe
             const val = parseInt(document.getElementById('durationVal').value);
             const unit = document.getElementById('durationUnit').value;
 
             if(!name) return alert("Nama Client tidak boleh kosong!");
-
             const id = `ID-${name.replace(/[^a-zA-Z0-9]/g, '').substring(0,4).toUpperCase()}-${Math.floor(1000+Math.random()*9000)}`;
             const date = new Date();
             if(unit === 'month') date.setMonth(date.getMonth() + val);
             if(unit === 'year') date.setFullYear(date.getFullYear() + val);
             if(unit === 'day') date.setDate(date.getDate() + val);
 
-            const data = { id, tenant: name, validUntil: date.toISOString() };
-            
+            // Payload Lisensi Termasuk Tipe (PRO/BASIC)
+            const data = { id, tenant: name, type: type, validUntil: date.toISOString() };
             try {
                 const token = CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
                 const newClient = { ...data, token, status: 'active', createdAt: new Date().toISOString() };
@@ -176,8 +250,58 @@
                 
                 loadClients();
                 document.getElementById('tenantName').value = '';
-                showToast("Lisensi Berhasil Dibuat!");
+                showToast(`Lisensi ${type} Berhasil Dibuat!`);
             } catch (e) { alert("Gagal membuat lisensi: " + e.message); }
+        }
+
+        // --- FUNGSI MONITORING LOG ---
+        async function fetchLogs() {
+            const LOG_URL = localStorage.getItem('app_log_url');
+            const tbody = document.getElementById('logTable');
+            
+            if(!LOG_URL) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-rose-500 font-bold text-[10px]">URL Google Script belum di-setting!</td></tr>`;
+                return;
+            }
+
+            try {
+                const res = await fetch(LOG_URL);
+                const data = await res.json();
+                tbody.innerHTML = '';
+                
+                // Deteksi Multi Login (1 ID dipakai >1 IP)
+                const userIPs = {}; 
+                data.forEach(log => {
+                    if(!userIPs[log.id]) userIPs[log.id] = new Set();
+                    userIPs[log.id].add(log.ip);
+                });
+
+                data.slice(0, 20).forEach(log => { // Ambil 20 log terakhir
+                    const isMultiLogin = userIPs[log.id] && userIPs[log.id].size > 1;
+                    const warningBadge = isMultiLogin 
+                        ? `<span class="block mt-1 w-fit bg-rose-500 text-white px-1.5 py-0.5 rounded text-[9px] font-black animate-pulse">MULTI-LOGIN!</span>` 
+                        : '';
+                    
+                    const row = `
+                        <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                            <td class="p-3 text-slate-400 font-mono">${new Date(log.timestamp).toLocaleTimeString()}</td>
+                            <td class="p-3">
+                                <div class="font-bold text-slate-800">${log.tenant}</div>
+                                <div class="text-[9px] text-slate-400 font-mono">${log.id}</div>
+                                ${warningBadge}
+                            </td>
+                            <td class="p-3">
+                                <div class="font-mono text-slate-600">${log.ip}</div>
+                                <div class="text-[9px] text-slate-400 truncate max-w-[120px]" title="${log.device}">${log.device}</div>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch(e) { 
+                console.error(e);
+                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-rose-500">Gagal memuat log.</td></tr>`;
+            }
         }
 
         function loadClients() {
@@ -200,13 +324,17 @@
                     ? '<span class="text-rose-600 bg-rose-50 px-2 py-0.5 rounded text-[9px] font-black border border-rose-100 uppercase tracking-wide"><i class="fa-solid fa-ban mr-1"></i>DIBLOKIR</span>' 
                     : '<span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[9px] font-black border border-emerald-100 uppercase tracking-wide"><i class="fa-solid fa-check mr-1"></i>AKTIF</span>';
                 
-                const bgClass = isBanned ? 'bg-slate-50 border-rose-200 ring-1 ring-rose-100' : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-md';
+                // Tampilkan Badge PRO/BASIC
+                const typeBadge = c.type === 'PRO' 
+                    ? '<span class="ml-2 text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded text-[8px] font-bold border border-indigo-100">PRO</span>' 
+                    : '<span class="ml-2 text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded text-[8px] font-bold border border-slate-200">BASIC</span>';
 
+                const bgClass = isBanned ? 'bg-slate-50 border-rose-200 ring-1 ring-rose-100' : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-md';
                 const html = `
                 <div class="p-4 rounded-2xl shadow-sm border ${bgClass} transition-all duration-300 group">
                     <div class="flex justify-between items-start mb-3">
                         <div>
-                            <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-store text-slate-400"></i> ${c.tenant}</h4>
+                            <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i class="fa-solid fa-store text-slate-400"></i> ${c.tenant} ${typeBadge}</h4>
                             <p class="text-[10px] text-slate-400 mt-0.5 pl-5">Exp: ${new Date(c.validUntil).toLocaleDateString()}</p>
                         </div>
                         ${badge}
@@ -250,7 +378,6 @@
             toast.className = 'fixed bottom-10 left-1/2 z-[100] flex items-center gap-3 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl shadow-slate-900/30 border border-white/10 toast-enter';
             toast.innerHTML = `<div class="bg-emerald-500 rounded-full p-1 text-slate-900"><i class="fa-solid fa-check text-[10px]"></i></div><span class="text-sm font-bold tracking-wide">${message}</span>`;
             document.body.appendChild(toast);
-
             setTimeout(() => {
                 toast.classList.remove('toast-enter');
                 toast.classList.add('toast-exit');
@@ -261,11 +388,9 @@
         // --- FUNGSI HAPUS: SEKALIGUS BLOKIR ONLINE ---
         async function del(id) {
             if(!confirm("PERINGATAN KERAS:\n\nTindakan ini akan:\n1. Memblokir ID ini di Server (Gist) selamanya.\n2. Menghapus data dari Admin Panel.\n\nLanjutkan?")) return;
-
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
 
-            // Jika config belum lengkap, cuma hapus lokal
             if(!token || !gistId) {
                 alert("Token/Gist belum disetting. Data hanya dihapus di HP ini (Client masih bisa login).");
                 localDelete(id);
@@ -273,11 +398,9 @@
             }
 
             try {
-                // 1. Ambil data Gist terbaru
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, {
                     headers: { Authorization: `token ${token}` }
                 });
-                
                 if(res.ok) {
                     const data = await res.json();
                     const fileNames = Object.keys(data.files);
@@ -287,7 +410,6 @@
                     let blacklist = [];
                     try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
 
-                    // 2. Tambahkan ID ke blacklist (jika belum ada)
                     if(!blacklist.includes(id)) {
                         blacklist.push(id);
                         await fetch(`https://api.github.com/gists/${gistId}`, {
@@ -296,8 +418,6 @@
                             body: JSON.stringify({ files: { [targetFileName]: { content: JSON.stringify(blacklist) } } })
                         });
                     }
-                    
-                    // 3. Hapus lokal setelah sukses blokir online
                     localDelete(id);
                     showToast("Client DIBLOKIR & DIHAPUS Permanen.");
                 } else {
@@ -315,7 +435,7 @@
             loadClients();
         }
 
-                async function toggleBan(id, action, btn) {
+        async function toggleBan(id, action, btn) {
             const token = localStorage.getItem('gh_token');
             const gistId = localStorage.getItem('gh_gist');
             
@@ -326,43 +446,31 @@
             btn.disabled = true;
 
             try {
-                // 1. AMBIL DATA GIST
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, {
                     headers: { Authorization: `token ${token}` }
                 });
-                
                 if(!res.ok) throw new Error(`Gagal koneksi (Error: ${res.status}). Cek Token.`);
                 const data = await res.json();
-                
-                // --- PERBAIKAN DISINI ---
-                // Menggunakan logika yang sama dengan fungsi del() (mencari file .json apapun)
-                // Sebelumnya: f === 'blocklist.json' (terlalu kaku)
                 const fileNames = Object.keys(data.files);
                 const targetFileName = fileNames.find(f => f.includes('json')) || fileNames[0];
 
                 if(!targetFileName) throw new Error("Gist tidak memiliki file JSON!");
-
-                // 2. PROSES UPDATE DATA
                 let content = data.files[targetFileName].content || '[]';
                 let blacklist = [];
                 try { blacklist = JSON.parse(content); } catch (e) { blacklist = []; }
 
                 if(action === 'ban') {
-                    // Masukkan ID jika belum ada
                     if(!blacklist.includes(id)) blacklist.push(id);
                 } else {
-                    // Hapus ID dari blacklist (Unban)
                     blacklist = blacklist.filter(x => x !== id);
                 }
 
-                // 3. KIRIM BALIK KE GITHUB (PATCH)
                 await fetch(`https://api.github.com/gists/${gistId}`, {
                     method: 'PATCH',
                     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ files: { [targetFileName]: { content: JSON.stringify(blacklist) } } })
                 });
 
-                // 4. UPDATE STATUS DI LOKAL ADMIN PANEL
                 let db = JSON.parse(localStorage.getItem('clients') || '[]');
                 const idx = db.findIndex(c => c.id === id);
                 if(idx !== -1) {
@@ -380,7 +488,6 @@
                 btn.disabled = false;
             }
         }
-
     </script>
 </body>
 </html>
